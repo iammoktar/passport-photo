@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Passport Photo Maker</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1a1d21;--muted:#5b6470;--accent:#1a7f4b;--border:#d9dde3;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14161a;--card:#1d2026;--text:#eceef1;--muted:#9aa3ae;--accent:#3dbd7d;--border:#333842}}
+:root[data-theme="dark"]{--bg:#14161a;--card:#1d2026;--text:#eceef1;--muted:#9aa3ae;--accent:#3dbd7d;--border:#333842}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5;padding:18px}
+main{max-width:640px;margin:0 auto}
+h1{font-size:1.3rem;margin:6px 0 4px}h2{font-size:1rem;margin:0 0 10px}
+p,.muted{color:var(--muted);margin:0 0 14px;font-size:.92rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+label{font-size:.9rem;color:var(--muted)}
+input[type=number]{width:70px;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);font:inherit}
+input[type=file]{width:100%;font:inherit;color:var(--text)}
+.sl{display:grid;grid-template-columns:90px 1fr;gap:8px;align-items:center;margin-bottom:6px}
+.sl input{width:100%}
+button{width:100%;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#fff;font:inherit;font-weight:600;font-size:1rem;margin-top:6px}
+button:disabled{opacity:.45}
+.pick2{display:block;box-sizing:border-box;text-align:center;padding:11px;border-radius:10px;border:1px solid var(--border);color:var(--text);cursor:pointer;width:100%}
+.vh{position:absolute;opacity:0;width:1px;height:1px;overflow:hidden}
+.pick{display:block;text-align:center;padding:13px;border-radius:10px;background:var(--accent);color:#fff!important;font-weight:600;font-size:1rem;cursor:pointer}
+button.sec{background:transparent;color:var(--text);border:1px solid var(--border)}
+canvas{max-width:100%;height:auto;display:block;margin:0 auto;border:1px solid var(--border);background:#fff}
+#single{max-width:210px}
+textarea{width:100%;box-sizing:border-box;min-height:200px;background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font:inherit;font-size:.88rem}
+#msg{font-size:.88rem;color:var(--muted);min-height:1.2em;margin-top:8px}
+</style>
+</head>
+<body>
+<main>
+<h1>Passport Photo Maker</h1>
+<p>Photo upload korun, copy songkha likhun. Background-er rong nijer pochondo-moto (default white), 35×45 mm crop, 4 px black border, A4 page (300 dpi).</p>
+
+<div class="card">
+<div class="row"><label for="f">Photo:</label></div>
+<label for="f" class="pick">Photo bachhai korun (gallery / camera)</label><input id="f" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"><div id="fn" class="muted" style="margin:8px 0 0"></div>
+<div class="row" style="margin-top:12px"><label for="n">Copy songkha:</label><input id="n" type="number" min="1" max="30" value="5"><span class="muted" style="margin:0">(ek row-te 5 ta, maximum 30)</span></div>
+<div class="row"><label for="bgc">Background rong:</label><input id="bgc" type="color" value="#ffffff"><label><input id="bw" type="checkbox"> Black &amp; white</label></div>
+<label for="bgf" class="pick2">Ba nijer pochondoer background chobi din (optional)</label><input id="bgf" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+</div>
+
+<div class="card" id="ctl" hidden>
+<h2>Adjust (dorkar hole)</h2>
+<div class="sl"><label for="tol">Background</label><input id="tol" type="range" min="30" max="260" value="110"></div>
+<div class="sl"><label for="zm">Zoom</label><input id="zm" type="range" min="60" max="150" value="100"></div>
+<div class="sl"><label for="hx">Dan-Bam</label><input id="hx" type="range" min="-30" max="30" value="0"></div>
+<div class="sl"><label for="vy">Upor-Niche</label><input id="vy" type="range" min="-30" max="30" value="0"></div>
+<canvas id="single" width="421" height="539"></canvas>
+</div>
+
+<div class="card" id="outc" hidden>
+<h2>A4 page</h2>
+<canvas id="sheet" width="2480" height="3508"></canvas>
+<button id="dl" type="button">JPG save korun</button>
+<button id="dp" class="sec" type="button">Shudhu background remove (PNG save)</button>
+<div id="msg"></div>
+</div>
+
+<details class="card">
+<summary>Claude chat-er jonno prompt</summary>
+<textarea id="t" readonly></textarea>
+<button id="cp" class="sec" type="button">Prompt copy korun</button>
+</details>
+</main>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var bgImg=null,work=null,cut=null,headTop=0,hxc=0,ch0=0,tmr=null;
+var PW=413,PH=531,BD=4;
+
+function msg(s){$('msg').textContent=s||''}
+
+$('f').addEventListener('change',function(){
+  var file=this.files&&this.files[0]; if(!file)return;
+  $('fn').textContent=file.name;
+  var url=URL.createObjectURL(file),im=new Image();
+  im.onload=function(){
+    var m=1600,s=Math.min(1,m/Math.max(im.width,im.height));
+    work=document.createElement('canvas');work.width=Math.round(im.width*s);work.height=Math.round(im.height*s);
+    work.getContext('2d').drawImage(im,0,0,work.width,work.height);
+    URL.revokeObjectURL(url);
+    $('ctl').hidden=false;$('outc').hidden=false;
+    $('zm').value=100;$('hx').value=0;$('vy').value=0;
+    buildCut(true);
+  };
+  im.onerror=function(){msg('Photo khola jayni.')};
+  im.src=url;
+});
+
+function buildCut(auto){
+  if(!work)return;
+  var w=work.width,h=work.height,ctx=work.getContext('2d');
+  var id=ctx.getImageData(0,0,w,h),d=id.data,tol=+$('tol').value;
+  // background colour = median of outer frame
+  var rs=[],gs=[],bs=[],fw=6,x,y,i;
+  function smp(px,py){var k=(py*w+px)*4;rs.push(d[k]);gs.push(d[k+1]);bs.push(d[k+2])}
+  for(y=0;y<h;y+=3){for(x=0;x<fw;x++){smp(x,y);smp(w-1-x,y)}}
+  for(x=0;x<w;x+=3){for(y=0;y<fw;y++){smp(x,y)}}
+  function med(a){a.sort(function(p,q){return p-q});return a[a.length>>1]}
+  var br=med(rs),bg=med(gs),bb=med(bs);
+  var bgm=new Uint8Array(w*h),st=new Int32Array(w*h),sp=0;
+  function near(p){var k=p*4;return Math.abs(d[k]-br)+Math.abs(d[k+1]-bg)+Math.abs(d[k+2]-bb)<tol}
+  function push(p){if(!bgm[p]&&near(p)){bgm[p]=1;st[sp++]=p}}
+  for(x=0;x<w;x++){push(x);push((h-1)*w+x)}
+  for(y=0;y<h;y++){push(y*w);push(y*w+w-1)}
+  while(sp>0){var p=st[--sp],px=p%w,py=(p/w)|0;
+    if(px>0)push(p-1);if(px<w-1)push(p+1);if(py>0)push(p-w);if(py<h-1)push(p+w)}
+  // erode foreground 2px, then soften
+  var a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=bgm[i]?0:255;
+  for(var it=0;it<2;it++){var b=a.slice();
+    for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;if(a[i]&&(!a[i-1]||!a[i+1]||!a[i-w]||!a[i+w]))b[i]=0}
+    a=b}
+  for(var pass=0;pass<2;pass++){var c=a.slice();
+    for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;
+      c[i]=(a[i-w-1]+a[i-w]+a[i-w+1]+a[i-1]+a[i]+a[i+1]+a[i+w-1]+a[i+w]+a[i+w+1])/9}
+    a=c}
+  for(i=0;i<w*h;i++)d[i*4+3]=a[i];
+  cut=document.createElement('canvas');cut.width=w;cut.height=h;cut.getContext('2d').putImageData(id,0,0);
+  if(auto){
+    headTop=0;
+    for(y=0;y<h;y++){var cnt=0;for(x=0;x<w;x++)if(a[y*w+x]>128)cnt++;if(cnt>w*0.04){headTop=y;break}}
+    ch0=h*0.69;var sx=0,sn=0,ye=Math.min(h,headTop+Math.round(ch0*0.35));
+    for(y=headTop;y<ye;y++)for(x=0;x<w;x++)if(a[y*w+x]>128){sx+=x;sn++}
+    hxc=sn?sx/sn:w/2;
+  }
+  render();
+}
+
+function drawSingle(target,ox,oy){
+  var z=+$('zm').value/100,ch=ch0*z,cw=ch*PW/PH;
+  var cx=hxc+(+$('hx').value/100)*cw;
+  var top=headTop-0.09*ch+(+$('vy').value/100)*ch;
+  var sc=PW/cw,ctx=target.getContext('2d');
+  ctx.save();ctx.translate(ox,oy);ctx.beginPath();ctx.rect(0,0,PW,PH);ctx.clip();
+  if(bgImg){var bs2=Math.max(PW/bgImg.width,PH/bgImg.height),dw=bgImg.width*bs2,dh=bgImg.height*bs2;ctx.drawImage(bgImg,(PW-dw)/2,(PH-dh)/2,dw,dh)}else{ctx.fillStyle=$('bgc').value;ctx.fillRect(0,0,PW,PH)}
+  ctx.setTransform(sc,0,0,sc,ox-(cx-cw/2)*sc,oy-top*sc);
+  ctx.imageSmoothingQuality='high';ctx.drawImage(cut,0,0);
+  ctx.restore();
+  if($('bw').checked){var im=ctx.getImageData(ox,oy,PW,PH),q=im.data;for(var k=0;k<q.length;k+=4){var g=0.299*q[k]+0.587*q[k+1]+0.114*q[k+2];q[k]=q[k+1]=q[k+2]=g}ctx.putImageData(im,ox,oy)}
+}
+
+function render(){
+  if(!cut)return;
+  var s=$('single'),sc=s.getContext('2d');
+  sc.fillStyle='#000';sc.fillRect(0,0,s.width,s.height);
+  drawSingle(s,BD,BD);
+  var n=Math.max(1,Math.min(30,+$('n').value||1)),cols=Math.min(5,n),gap=30;
+  var W=PW+2*BD,H=PH+2*BD,sh=$('sheet'),ctx=sh.getContext('2d');
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,sh.width,sh.height);
+  var X=Math.round((sh.width-(cols*W+(cols-1)*gap))/2);
+  for(var i=0;i<n;i++){var r=(i/5)|0,c=i%5;
+    ctx.drawImage(s,X+c*(W+gap),150+r*(H+gap))}
+}
+
+['tol'].forEach(function(id){$(id).addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(function(){buildCut(true)},150)})});
+['zm','hx','vy','n','bgc','bw'].forEach(function(id){$(id).addEventListener('input',function(){clearTimeout(tmr);tmr=setTimeout(render,60);buildTxt()})});
+
+$('dl').addEventListener('click',async function(){
+  msg('');
+  var dls=null;
+  $('sheet').toBlob(async function(blob){
+    if(dls){try{await dls.save({filename:'passport_'+$('n').value+'_copies_A4.jpg',data:blob});msg('Save hoyeche.');return}catch(e){if(e&&e.code==='declined'){msg('Save bondho kora hoyeche.');return}}}
+    saveBlob(blob,'passport_'+$('n').value+'_copies_A4.jpg');msg('Download hoyeche.');
+  },'image/jpeg',0.95);
+});
+
+$('bgc').addEventListener('input',function(){bgImg=null;$('bgf').value=''});
+$('bgf').addEventListener('change',function(){
+  var f2=this.files&&this.files[0];if(!f2)return;
+  var u2=URL.createObjectURL(f2),i2=new Image();
+  i2.onload=function(){bgImg=i2;render()};i2.onerror=function(){msg('Background chobi khola jayni.')};i2.src=u2;
+});
+$('dp').addEventListener('click',async function(){
+  if(!cut)return;msg('');
+  var dls=null;
+  cut.toBlob(async function(blob){
+    if(dls){try{await dls.save({filename:'background_removed.png',data:blob});msg('Save hoyeche.');return}catch(e){if(e&&e.code==='declined'){msg('Save bondho kora hoyeche.');return}}}
+    saveBlob(blob,'background_removed.png');msg('Download hoyeche.');
+  },'image/png');
+});
+function saveBlob(blob,name){var u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)}
+var NL=String.fromCharCode(10);
+function bgp(){var v=$('bgc').value.toLowerCase();return v==='#ffffff'?'pure white':'ei rong-er ('+v+')'}
+function bwp(){return $('bw').checked?'Chobi-ta black and white (grayscale) koro.':'Chobi-r rong ager moto rakho (black and white korbe na).'}
+function buildTxt(){
+  $('t').value="Ei passport photo-ta niye kaj koro:\n\n1. Background remove kore "+bgp()+" background dao.\n2. Passport size 35×45 mm (W×H) e crop koro, mukh majhkhane rekhe.\n3. Prottek chobi-r chardike 4 px black border (stroke) dao.\n4. A4 page (300 dpi) banao. Copy gulo page-er upore row-te sajao, ek row-te maximum 5 ta. Copy beshi hole porer row-e jabe.\n5. Final file JPG hishebe dao (chaile single chobio dio)."+NL+"6. "+bwp()+"\n\nCopy songkha: "+($('n').value||5)+" ta";
+}
+buildTxt();
+$('cp').addEventListener('click',function(){
+  var b=this;$('t').select();
+  function ok(){b.textContent='Copy hoyeche ✓';setTimeout(function(){b.textContent='Prompt copy korun'},2000)}
+  try{navigator.clipboard.writeText($('t').value).then(ok,function(){document.execCommand('copy');ok()})}catch(e){document.execCommand('copy');ok()}
+});
+})();
+</script>
+</body>
+</html>
