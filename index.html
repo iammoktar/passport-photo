@@ -26,6 +26,7 @@ input[type=color]{width:100%;height:42px;border:1.5px solid var(--bd);border-rad
 .btn{display:block;width:100%;text-align:center;padding:12px;border:0;border-radius:12px;font:inherit;font-weight:700;color:#fff;background:linear-gradient(100deg,var(--c1),var(--c2));cursor:pointer;margin-top:8px}
 .alt{background:linear-gradient(100deg,var(--c4),#3b82f6)}.ghost{background:#fff;color:var(--c1);border:2px solid var(--c1)}
 .btn:disabled{opacity:.4}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}.sw button{width:38px;height:38px;border-radius:50%;border:2px solid #c9cdea;padding:0;cursor:pointer}
 .vh{position:absolute;opacity:0;width:1px;height:1px}
 canvas{display:block;max-width:100%;height:auto;margin:10px auto;border:1px solid var(--bd);border-radius:6px;background:#fff}
 #single{max-width:200px}#pv{max-width:240px}
@@ -41,17 +42,23 @@ footer{text-align:center;color:var(--mut);font-size:.82rem;padding:6px 16px 28px
 <main>
 
 <section class="card"><h2><span class="n">1</span>Upload your photo</h2>
-<label for="f" class="btn">Choose photo (gallery / camera)</label>
+<label for="f" class="btn">Choose photo from gallery</label>
+<div style="display:flex;gap:8px"><label for="cam1" class="btn alt" style="flex:1">Take photo (back camera)</label><label for="cam2" class="btn alt" style="flex:1">Take photo (front camera)</label></div>
+<input id="cam1" class="vh" type="file" accept="image/*" capture="environment"><input id="cam2" class="vh" type="file" accept="image/*" capture="user">
 <input id="f" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
 <p class="hint" id="fn">Use a front-facing photo taken against a plain background.</p></section>
 
 <section class="card s2" id="s2" hidden><h2><span class="n">2</span>Background</h2>
 <div class="g"><div><label for="bgc">Background colour</label><input id="bgc" type="color" value="#ffffff"></div>
 <div><label for="st">Manual removal strength</label><input id="st" type="range" min="20" max="180" value="90"></div></div>
+<label>Light colours (tap to use)</label><div class="sw" id="sw"></div>
 <p class="hint">Only the background changes; face and dress stay untouched. If part of the face or dress is cut, lower the strength. If some background is left, raise it.</p>
 <label for="bgf" class="btn ghost">Or use a background picture (optional)</label>
 <input id="bgf" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
 <label class="ck"><input id="bw" type="checkbox"> Black &amp; white photo</label>
+<label class="ck"><input id="lt" type="checkbox" checked> Auto brighten face (fixes dark photos)</label>
+<label for="br">Extra brightness</label><input id="br" type="range" min="0" max="60" value="0">
+<label class="ck"><input id="fr" type="checkbox" checked> Clean colour fringe around edges (switch off for the older, softer edge)</label>
 <button class="btn alt" id="ai" type="button">Auto: find face &amp; remove background (AI)</button>
 <p class="hint" id="aimsg">Runs automatically after you choose a photo. Needs internet (small download).</p>
 <canvas id="pv" width="10" height="10"></canvas>
@@ -104,7 +111,7 @@ footer{text-align:center;color:var(--mut);font-size:.82rem;padding:6px 16px 28px
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)};
-var srcFile,work,cut,hT=0,hX=0,c0=0,bgI=null,ok=false,cur=0,tm,S=null;
+var cutAdj,faceB=null,lightDirty=true,srcFile,work,cut,hT=0,hX=0,c0=0,bgI=null,ok=false,cur=0,tm,S=null;
 var PG={a4:[210,297],a3:[297,420],a5:[148,210],letter:[215.9,279.4],'4x6':[101.6,152.4],'5x7':[127,177.8]};
 function deb(f,t){clearTimeout(tm);tm=setTimeout(f,t)}
 function loadImg(file,cb){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){URL.revokeObjectURL(u);cb(im)};im.onerror=function(){$('fn').textContent='Could not open this picture.'};im.src=u}
@@ -112,9 +119,11 @@ function save(b,n){var u=URL.createObjectURL(b),a=document.createElement('a');a.
 function gray(x,X,Y,w,h){var im=x.getImageData(X,Y,w,h),q=im.data;for(var k=0;k<q.length;k+=4){var g=.299*q[k]+.587*q[k+1]+.114*q[k+2];q[k]=q[k+1]=q[k+2]=g}x.putImageData(im,X,Y)}
 function paintBg(x,X,Y,w,h){if(bgI){var s=Math.max(w/bgI.width,h/bgI.height),dw=bgI.width*s,dh=bgI.height*s;x.drawImage(bgI,X+(w-dw)/2,Y+(h-dh)/2,dw,dh)}else{x.fillStyle=$('bgc').value;x.fillRect(X,Y,w,h)}}
 
-$('f').onchange=function(){var f=this.files[0];if(!f)return;srcFile=f;$('fn').textContent=f.name;
+$('f').onchange=function(){var f=this.files[0];if(!f)return;srcFile=f;faceB=null;$('fn').textContent=f.name;
 loadImg(f,function(im){var s=Math.min(1,1600/Math.max(im.width,im.height));work=document.createElement('canvas');work.width=Math.round(im.width*s);work.height=Math.round(im.height*s);work.getContext('2d').drawImage(im,0,0,work.width,work.height);
 ok=false;$('s3').hidden=$('s4').hidden=$('s5').hidden=true;$('s2').hidden=false;$('zm').value=100;$('hx').value=0;$('vy').value=0;build();runAI();$('s2').scrollIntoView({behavior:'smooth'})})};
+
+$('cam1').onchange=$('cam2').onchange=$('f').onchange;
 
 function build(){
 var w=work.width,h=work.height,id=work.getContext('2d').getImageData(0,0,w,h),d=id.data,tol=+$('st').value,x,y,i,k,R=[],G=[],B=[];
@@ -154,22 +163,33 @@ var a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=lab[i]===bl?255:0;
 for(var it=0;it<2;it++){var e=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;if(a[i]&&(!a[i-1]||!a[i+1]||!a[i-w]||!a[i+w]))e[i]=0}a=e}
 for(var ps=0;ps<2;ps++){var s2=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;s2[i]=(a[i-w-1]+a[i-w]+a[i-w+1]+a[i-1]+a[i]+a[i+1]+a[i+w-1]+a[i+w]+a[i+w+1])/9}a=s2}
 for(i=0;i<w*h;i++)d[i*4+3]=a[i];
-cut=document.createElement('canvas');cut.width=w;cut.height=h;cut.getContext('2d').putImageData(id,0,0);
+cut=document.createElement('canvas');cut.width=w;cut.height=h;cut.getContext('2d').putImageData(id,0,0);lightDirty=true;
 finish(a,w,h);paintPv();renderAll()}
 function finish(a,w,h){var x,y;hT=0;for(y=0;y<h;y++){var n=0;for(x=0;x<w;x++)if(a[y*w+x]>128)n++;if(n>w*.04){hT=y;break}}
 c0=h*.69;var sx=0,sn=0,ye=Math.min(h,hT+Math.round(c0*.35));
 for(y=hT;y<ye;y++)for(x=0;x<w;x++)if(a[y*w+x]>128){sx+=x;sn++}
 hX=sn?sx/sn:w/2}
 
-function paintPv(){if(!cut)return;var c=$('pv'),w=cut.width,h=cut.height;c.width=w;c.height=h;var x=c.getContext('2d');paintBg(x,0,0,w,h);x.drawImage(cut,0,0);if($('bw').checked)gray(x,0,0,w,h)}
+function applyLight(){lightDirty=false;if(!cut)return;var auto=$('lt').checked,extra=+$('br').value;if(!auto&&!extra){cutAdj=null;return}
+var w=cut.width,h=cut.height,cx=cut.getContext('2d'),id=cx.getImageData(0,0,w,h),d=id.data,x0,x1,y0,y1,x,y,i,sum=0,n=0;
+if(faceB){x0=faceB.originX+.15*faceB.width;x1=faceB.originX+.85*faceB.width;y0=faceB.originY+.2*faceB.height;y1=faceB.originY+.9*faceB.height}else{x0=hX-.1*w;x1=hX+.1*w;y0=hT+.15*c0;y1=hT+.5*c0}
+x0=Math.max(0,Math.round(x0));x1=Math.min(w-1,Math.round(x1));y0=Math.max(0,Math.round(y0));y1=Math.min(h-1,Math.round(y1));
+for(y=y0;y<=y1;y+=2)for(x=x0;x<=x1;x+=2){i=(y*w+x)*4;if(d[i+3]>200){sum+=.299*d[i]+.587*d[i+1]+.114*d[i+2];n++}}
+var m=n>20?sum/n/255:.5,g=1;if(auto&&m<.46)g=Math.max(.55,Math.log(.46)/Math.log(Math.max(.06,m)));
+var gain=1+extra/100,lut=new Uint8Array(256);for(i=0;i<256;i++)lut[i]=Math.round(Math.min(1,Math.pow(i/255,g)*gain)*255);
+for(i=0;i<d.length;i+=4){d[i]=lut[d[i]];d[i+1]=lut[d[i+1]];d[i+2]=lut[d[i+2]]}
+cutAdj=document.createElement('canvas');cutAdj.width=w;cutAdj.height=h;cutAdj.getContext('2d').putImageData(id,0,0)}
+function paintPv(){if(lightDirty)applyLight();if(!cut)return;var c=$('pv'),w=cut.width,h=cut.height;c.width=w;c.height=h;var x=c.getContext('2d');paintBg(x,0,0,w,h);x.drawImage(cutAdj||cut,0,0);if($('bw').checked)gray(x,0,0,w,h)}
 
 function sizeMM(){var v=$('size').value;if(v=='custom')return[Math.max(10,+$('cwm').value||35),Math.max(10,+$('chm').value||45)];var p=v.split('x');return[+p[0],+p[1]]}
 function lay(){var s=sizeMM(),pg=PG[$('pg').value],o=$('ori').value=='l',pw=o?pg[1]:pg[0],ph=o?pg[0]:pg[1],m=+$('mar').value||0,g=+$('gap').value||0,dpi=+$('dpi').value,
 cols=Math.floor((pw-2*m+g)/(s[0]+g)),rows=Math.floor((ph-2*m+g)/(s[1]+g)),per=Math.max(0,cols)*Math.max(0,rows),n=Math.max(1,Math.min(200,+$('n').value||1));
 return{s:s,pw:pw,ph:ph,m:m,g:g,cols:cols,per:per,n:n,pages:per?Math.ceil(n/per):0,px:function(mm){return Math.round(mm/25.4*dpi)}}}
 function photo(W,H,b){var c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d');x.fillStyle=$('bdc').value;x.fillRect(0,0,W,H);
-var iw=W-2*b,ih=H-2*b,ch=c0*(+$('zm').value/100),cw=ch*iw/ih,cx=hX+(+$('hx').value/100)*cw,top=hT-.09*ch+(+$('vy').value/100)*ch,sc=iw/cw;
-x.save();x.beginPath();x.rect(b,b,iw,ih);x.clip();paintBg(x,b,b,iw,ih);x.setTransform(sc,0,0,sc,b-(cx-cw/2)*sc,b-top*sc);x.imageSmoothingQuality='high';x.drawImage(cut,0,0);x.restore();
+var iw=W-2*b,ih=H-2*b,ra=iw/ih,CW=cut.width,CH=cut.height,ch=c0,cw=ch*ra,top=hT-.09*ch;
+if(top<0)top=0;if(top+ch>CH){ch=CH-top;cw=ch*ra}if(cw>CW){cw=CW;ch=cw/ra}
+var left=Math.max(0,Math.min(hX-cw/2,CW-cw)),z=+$('zm').value/100,cx=left+cw/2+(+$('hx').value/100)*cw,cy=top+ch/2+(+$('vy').value/100)*ch,cw2=cw/z,ch2=ch/z,sc=iw/cw2;
+x.save();x.beginPath();x.rect(b,b,iw,ih);x.clip();paintBg(x,b,b,iw,ih);x.setTransform(sc,0,0,sc,b-(cx-cw2/2)*sc,b-(cy-ch2/2)*sc);x.imageSmoothingQuality='high';x.drawImage(cutAdj||cut,0,0);x.restore();
 if($('bw').checked)gray(x,b,b,iw,ih);return c}
 function paintPage(c,k,L,p){c.width=L.px(L.pw);c.height=L.px(L.ph);var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
 var a=k*L.per,e=Math.min(L.n,a+L.per),al=$('al').value;
@@ -178,7 +198,7 @@ if(al=='l')xm=L.m+cl*(L.s[0]+L.g);else if(al=='r')xm=L.pw-L.m-L.s[0]-cl*(L.s[0]+
 x.drawImage(p,L.px(xm),L.px(L.m+r*(L.s[1]+L.g)))}}
 
 function applyMode(){var sg=$('mode').value=='single';$('szw').hidden=sg;$('spw').hidden=!sg;$('cust').hidden=sg||$('size').value!='custom';$('cust2').hidden=!(sg&&$('spx').value=='custom');$('s4').hidden=!ok||sg;$('s5').hidden=!ok||!sg;$('single').style.maxWidth=sg?'320px':'200px'}
-function renderAll(){if(!cut||!ok)return;applyMode();
+function renderAll(){if(!cut||!ok)return;if(lightDirty)applyLight();applyMode();
 if($('mode').value=='single'){var q=$('spx').value=='custom'?[+$('cwp').value||600,+$('chp').value||600]:$('spx').value.split('x').map(Number),W1=Math.max(50,Math.min(4000,Math.round(q[0]))),H1=Math.max(50,Math.min(4000,Math.round(q[1]))),bm1=+$('bd').value,b1=bm1>0?Math.max(1,Math.round(bm1*11.81)):0,p1=photo(W1,H1,b1),sg1=$('single');
 sg1.width=W1;sg1.height=H1;sg1.getContext('2d').drawImage(p1,0,0);S={single:true};
 sg1.toBlob(function(bl){$('sinfo').textContent=W1+' × '+H1+' px, about '+Math.round(bl.size/1024)+' KB'},'image/jpeg',.92);return}
@@ -223,28 +243,62 @@ function enc(q){return new Promise(function(r){c.toBlob(r,'image/jpeg',q)})}
 if(kb>0){var lo=.2,hi=.95;bl=await enc(lo);if(bl.size/1024>kb){$('sinfo').textContent='Cannot reach '+kb+' KB at this size. Saved the smallest quality ('+Math.round(bl.size/1024)+' KB). Try a smaller pixel size.'}
 else{for(var i=0;i<8;i++){var m=(lo+hi)/2,t=await enc(m);if(t.size/1024<=kb){lo=m;bl=t}else hi=m}$('sinfo').textContent='Saved: '+Math.round(bl.size/1024)+' KB'}}
 save(bl,'passport-photo.jpg')})()};
+(function(){var C=[['#ffffff','White'],['#eaf4ff','Very light blue'],['#cfe6ff','Light blue'],['#b8d8f5','Sky blue'],['#eeeeee','Light grey'],['#ffe1ec','Light pink'],['#e1f6e1','Light green'],['#fff5c2','Light yellow'],['#ffe5d2','Light peach'],['#e8e0ff','Light lavender'],['#fbf4e4','Cream']],h=$('sw');
+C.forEach(function(c){var b=document.createElement('button');b.type='button';b.style.background=c[0];b.title=c[1];b.setAttribute('aria-label',c[1]);b.onclick=function(){$('bgc').value=c[0];$('bgc').oninput()};h.appendChild(b)})})();
 var mp=null;
+function bx(s,w,h,r){var N=w*h,t=new Float32Array(N),d=new Float32Array(N),x,y,a,o,k;
+for(y=0;y<h;y++){a=0;o=y*w;for(x=0;x<=r&&x<w;x++)a+=s[o+x];for(x=0;x<w;x++){t[o+x]=a;k=x+r+1;if(k<w)a+=s[o+k];k=x-r;if(k>=0)a-=s[o+k]}}
+for(x=0;x<w;x++){a=0;for(y=0;y<=r&&y<h;y++)a+=t[y*w+x];for(y=0;y<h;y++){d[y*w+x]=a;k=y+r+1;if(k<h)a+=t[k*w+x];k=y-r;if(k>=0)a-=t[k*w+x]}}
+for(y=0;y<h;y++){var cy=Math.min(h-1,y+r)-Math.max(0,y-r)+1;for(x=0;x<w;x++)d[y*w+x]/=cy*(Math.min(w-1,x+r)-Math.max(0,x-r)+1)}return d}
+function gf(I,p,w,h,r,e){var N=w*h,i,I2=new Float32Array(N),Ip=new Float32Array(N);for(i=0;i<N;i++){I2[i]=I[i]*I[i];Ip[i]=I[i]*p[i]}
+var mI=bx(I,w,h,r),mp=bx(p,w,h,r),cI=bx(I2,w,h,r),cIp=bx(Ip,w,h,r),a=new Float32Array(N),b=new Float32Array(N);
+for(i=0;i<N;i++){var v=cI[i]-mI[i]*mI[i],c=cIp[i]-mI[i]*mp[i];a[i]=c/(v+e);b[i]=mp[i]-a[i]*mI[i]}
+var ma=bx(a,w,h,r),mb=bx(b,w,h,r),q=new Float32Array(N);for(i=0;i<N;i++)q[i]=ma[i]*I[i]+mb[i];return q}
+function bbox(a,w,h){var x0=w,y0=h,x1=0,y1=0,x,y;for(y=0;y<h;y+=2)for(x=0;x<w;x+=2)if(a[y*w+x]>128){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}return x1>x0&&y1>y0?[x0,y0,x1,y1]:[0,0,w,h]}
+function retryFace(o,a,w,h){try{var bb=bbox(a,w,h),rx0=Math.max(0,bb[0]-.05*w),rx1=Math.min(w,bb[2]+.05*w),ry0=bb[1],ry1=Math.min(h,bb[1]+(bb[3]-bb[1])*.4),rw=rx1-rx0,rh=ry1-ry0,sc=Math.min(4,Math.max(1,640/Math.max(rw,rh))),c=document.createElement('canvas');c.width=Math.round(rw*sc);c.height=Math.round(rh*sc);c.getContext('2d').drawImage(work,rx0,ry0,rw,rh,0,0,c.width,c.height);
+var r=o.fd.detect(c),bx=r&&r.detections&&r.detections[0]&&r.detections[0].boundingBox;if(!bx)return null;return{originX:rx0+bx.originX/sc,originY:ry0+bx.originY/sc,width:bx.width/sc,height:bx.height/sc}}catch(e){return null}}
+function refine(a0,w,h,fb,Pc){var a=a0.slice(),d=work.getContext('2d').getImageData(0,0,w,h).data,N=w*h,q=new Int32Array(N),i,x,y,tot=0,rem=0;for(i=0;i<N;i++)if(a[i]>=30)tot++;
+for(var pass=0;pass<2;pass++){var ref=new Int32Array(N).fill(-1),dep=new Uint8Array(N),qh=0,qt=0;
+for(i=0;i<N;i++)if(a[i]<30){x=i%w;y=(i/w)|0;if((x>0&&a[i-1]>=30)||(x<w-1&&a[i+1]>=30)||(y>0&&a[i-w]>=30)||(y<h-1&&a[i+w]>=30)){ref[i]=i;q[qt++]=i}}
+while(qh<qt){var p=q[qh++];if(dep[p]>=28)continue;x=p%w;y=(p/w)|0;var nn=[x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1];
+for(var k=0;k<4;k++){var n=nn[k];if(n>=0&&a[n]>=30&&ref[n]<0){ref[n]=ref[p];dep[n]=dep[p]+1;q[qt++]=n}}}
+for(i=0;i<N;i++)if(a[i]>=30&&ref[i]>=0&&ref[i]!==i&&(!Pc||Pc[i]<.9)){x=i%w;y=(i/w)|0;
+if(fb&&x>fb.originX&&x<fb.originX+fb.width&&y>fb.originY&&y<fb.originY+fb.height)continue;
+var r=ref[i]*4,j=i*4;if(Math.abs(d[j]-d[r])+Math.abs(d[j+1]-d[r+1])+Math.abs(d[j+2]-d[r+2])<45&&Math.max(d[j],d[j+1],d[j+2])-Math.min(d[j],d[j+1],d[j+2])>50&&Math.max(d[r],d[r+1],d[r+2])-Math.min(d[r],d[r+1],d[r+2])>50){a[i]=0;rem++}}}
+if(rem>tot*.12)return a0;
+for(var ps=0;ps<2;ps++){var c=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;c[i]=(a[i-w-1]+a[i-w]+a[i-w+1]+a[i-1]+a[i]+a[i+1]+a[i+w-1]+a[i+w]+a[i+w+1])/9}a=c}
+return a}
 async function getMP(){if(mp)return mp;
 var V='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14',M=await import(V+'/vision_bundle.mjs'),fs=await M.FilesetResolver.forVisionTasks(V+'/wasm'),G='https://storage.googleapis.com/mediapipe-models/';
 var seg=await M.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:G+'image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',delegate:'CPU'},runningMode:'IMAGE',outputConfidenceMasks:true,outputCategoryMask:false});
 var fd=await M.FaceDetector.createFromOptions(fs,{baseOptions:{modelAssetPath:G+'face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite',delegate:'CPU'},runningMode:'IMAGE'});
 mp={seg:seg,fd:fd};return mp}
 async function runAI(){if(!work)return;var m=$('aimsg'),btn=$('ai');btn.disabled=true;m.textContent='Finding your face and removing the background… (first time can take a minute)';
-try{var o=await getMP(),w=work.width,h=work.height,res=o.seg.segment(work),mk=res.confidenceMasks[0],mw=mk.width,mh=mk.height,f=mk.getAsFloat32Array(),bs=0,bn=0,i,x,y;
-for(x=0;x<mw;x+=2){bs+=f[x]+f[(mh-1)*mw+x];bn+=2}for(y=0;y<mh;y+=2){bs+=f[y*mw]+f[y*mw+mw-1];bn+=2}
-var inv=bs/bn>.5,mc=document.createElement('canvas');mc.width=mw;mc.height=mh;var mx=mc.getContext('2d'),id=mx.createImageData(mw,mh);
-for(i=0;i<mw*mh;i++){var v=inv?1-f[i]:f[i];v=Math.min(1,Math.max(0,(v-.3)/.4));id.data[i*4+3]=Math.round(v*255)}
-mx.putImageData(id,0,0);
-cut=document.createElement('canvas');cut.width=w;cut.height=h;var cx=cut.getContext('2d');cx.drawImage(work,0,0);cx.globalCompositeOperation='destination-in';cx.imageSmoothingQuality='high';cx.drawImage(mc,0,0,w,h);cx.globalCompositeOperation='source-over';
-var dd=cx.getImageData(0,0,w,h).data,a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=dd[i*4+3];
+try{var o=await getMP(),w=work.width,h=work.height,i,x,y,fr=o.fd.detect(work),fb=fr&&fr.detections&&fr.detections[0]&&fr.detections[0].boundingBox,
+res=o.seg.segment(work),mk=res.confidenceMasks[0],mw=mk.width,mh=mk.height,f=mk.getAsFloat32Array(),inv=false;
+if(fb){var x0=Math.max(0,Math.floor((fb.originX+fb.width*.3)/w*mw)),x1=Math.min(mw-1,Math.ceil((fb.originX+fb.width*.7)/w*mw)),y0=Math.max(0,Math.floor((fb.originY+fb.height*.3)/h*mh)),y1=Math.min(mh-1,Math.ceil((fb.originY+fb.height*.7)/h*mh)),fs=0,fn=0;
+for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++){fs+=f[y*mw+x];fn++}inv=fn?fs/fn<.5:false}
+else{var bs=0,bn=0;for(x=0;x<mw;x+=2){bs+=f[x]+f[(mh-1)*mw+x];bn+=2}for(y=0;y<mh;y+=2){bs+=f[y*mw]+f[y*mw+mw-1];bn+=2}inv=bs/bn>.5}
+var fc=$('fr').checked,mc=document.createElement('canvas');mc.width=mw;mc.height=mh;var mx=mc.getContext('2d'),id=mx.createImageData(mw,mh),fg=0;
+for(i=0;i<mw*mh;i++){var v=inv?1-f[i]:f[i];if(v>.5)fg++;v=Math.min(1,Math.max(0,fc?v:(v-.22)/.4));id.data[i*4+3]=Math.round(v*255)}
+mx.putImageData(id,0,0);var fr2=fg/(mw*mh),good=fr2>=.05&&fr2<=.92;
+if(good&&fc){var pc=document.createElement('canvas');pc.width=w;pc.height=h;var px=pc.getContext('2d');px.imageSmoothingQuality='high';px.drawImage(mc,0,0,w,h);
+var pd=px.getImageData(0,0,w,h).data,wd=work.getContext('2d').getImageData(0,0,w,h).data,P=new Float32Array(w*h),Gd=new Float32Array(w*h);
+for(i=0;i<w*h;i++){P[i]=pd[i*4+3]/255;Gd[i]=(.299*wd[i*4]+.587*wd[i*4+1]+.114*wd[i*4+2])/255}
+var Q=gf(Gd,P,w,h,Math.max(6,Math.round(w/90)),.0006);
+cut=document.createElement('canvas');cut.width=w;cut.height=h;var cx0=cut.getContext('2d'),oi=cx0.createImageData(w,h);
+for(i=0;i<w*h;i++){var qq=Math.min(1,Math.max(0,(Q[i]-.42)/.3));oi.data[i*4]=wd[i*4];oi.data[i*4+1]=wd[i*4+1];oi.data[i*4+2]=wd[i*4+2];oi.data[i*4+3]=Math.round(qq*255)}cx0.putImageData(oi,0,0)}
+else if(good){cut=document.createElement('canvas');cut.width=w;cut.height=h;var cx=cut.getContext('2d');cx.drawImage(work,0,0);cx.globalCompositeOperation='destination-in';cx.imageSmoothingQuality='high';cx.drawImage(mc,0,0,w,h);cx.globalCompositeOperation='source-over'}
+var cc=cut.getContext('2d'),im2=cc.getImageData(0,0,w,h),dd=im2.data,a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=dd[i*4+3];
+if(!fb)fb=retryFace(o,a,w,h);
+if(good&&fc){a=refine(a,w,h,fb,P);for(i=0;i<w*h;i++)dd[i*4+3]=a[i];cc.putImageData(im2,0,0)}
 finish(a,w,h);
-var fr=o.fd.detect(work),fb=fr&&fr.detections&&fr.detections[0]&&fr.detections[0].boundingBox;
-if(fb){var chin=fb.originY+fb.height*1.04,hh=chin-hT;if(hh>h*.12&&hh<h*.95){c0=hh/.68;hX=fb.originX+fb.width/2}else fb=null}
-$('zm').value=100;$('hx').value=0;$('vy').value=0;paintPv();ok=true;renderAll();$('s3').hidden=false;$('s3').scrollIntoView({behavior:'smooth'});
-m.textContent=fb?'Done. Face found and background removed automatically.':'Background removed. Face not found, please adjust the position below.'}
+if(fb){hT=Math.max(fb.originY-.9*fb.height,Math.min(hT,fb.originY-.1*fb.height));var hh=fb.originY+fb.height*1.04-hT;c0=hh/.68;hX=fb.originX+fb.width/2}else{var bb=bbox(a,w,h),bw=bb[2]-bb[0],bh=bb[3]-bb[1],hh2=bh>1.6*bw?bh*.15:bh*.5;c0=hh2/.68}
+faceB=fb||null;lightDirty=true;$('zm').value=100;$('hx').value=0;$('vy').value=0;paintPv();ok=true;renderAll();$('s3').hidden=false;$('s3').scrollIntoView({behavior:'smooth'});
+m.textContent=good?(fb?'Done. Face found and background removed automatically.':'Background removed. Face not found, please adjust the position below.'):'Automatic background removal was not reliable for this photo. Using manual strength; use the slider above. '+(fb?'Face found and cropped.':'Face not found.')}
 catch(e){m.textContent='Automatic mode could not load (it needs internet; open the website link, not a saved file). Using the manual strength slider instead.'}
 btn.disabled=false}
-$('ai').onclick=runAI;
+$('ai').onclick=runAI;['lt','br'].forEach(function(i){$(i).oninput=$(i).onchange=function(){lightDirty=true;paintPv();deb(renderAll,80)}});$('fr').onchange=function(){if(work)runAI()};
 $('prev').onclick=function(){cur--;renderAll()};$('next').onclick=function(){cur++;renderAll()};
 $('dl').onclick=function(){$('sheet').toBlob(function(b){save(b,'passport-photos-page-'+(cur+1)+'.jpg')},'image/jpeg',.95)};
 $('dpdf').onclick=function(){if(!S||S.L.per<1)return;$('msg').textContent='Preparing PDF…';pdfAll().then(function(b){save(b,'passport-photos.pdf');$('msg').textContent='PDF downloaded.'},function(){$('msg').textContent='Could not make the PDF. Try a lower DPI.'})};
