@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Passport Photo Maker – Print Sheet Creator</title>
+<meta name="description" content="Free passport photo maker: change the background colour, pick any photo size and print many copies on A4 or any page.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1f2340;--mut:#666b8c;--c1:#4f46e5;--c1d:#4338ca;--c4:#0d9488;--bd:#e4e6f2;--bg:#f5f6fb;color-scheme:light}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font:16px/1.55 "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh}
+header{color:#fff;text-align:center;padding:30px 18px 54px;background:linear-gradient(135deg,#4338ca,#6d5ef0 55%,#8b6bf5)}
+h1{margin:0 0 6px;font:800 clamp(1.5rem,6vw,2.1rem)/1.2 "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;letter-spacing:-.02em}
+header p{margin:0 auto;max-width:480px;opacity:.93;font-size:.98rem}
+main{max-width:680px;margin:-30px auto 0;padding:0 14px 8px;position:relative}
+.card{background:#fff;border-radius:18px;padding:18px;margin-bottom:16px;box-shadow:0 6px 24px rgba(40,40,100,.09);border:1px solid #eceef8}
+h2{margin:0 0 14px;font:700 1.08rem/1.2 "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;display:flex;align-items:center;gap:10px}
+.n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--c1);color:#fff;font-size:.9rem;font-weight:800}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px}
+label{display:block;font-size:.85rem;font-weight:700;color:var(--mut);margin:0 0 4px}
+select,input[type=number],input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:12px;font:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+select:focus,input:focus{outline:0;border-color:var(--c1);box-shadow:0 0 0 4px rgba(79,70,229,.14)}
+input[type=range]{width:100%;accent-color:var(--c1)}
+input[type=color]{width:100%;height:42px;border:1.5px solid var(--bd);border-radius:12px;padding:3px;background:#fff}
+.ck{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--ink);margin:8px 0}
+.btn{display:block;width:100%;text-align:center;padding:12px;border:0;border-radius:12px;font:700 .98rem "Plus Jakarta Sans","Segoe UI",system-ui,sans-serif;color:#fff;background:var(--c1);cursor:pointer;margin-top:10px;transition:background .15s,transform .1s}
+.btn:hover{background:var(--c1d)}.btn:active{transform:scale(.985)}
+.alt{background:var(--c4)}.alt:hover{background:#0b7d73}
+.ghost{background:#fff;color:var(--c1);border:1.5px solid #cfd2f3}.ghost:hover{background:#f1f2ff}
+.btn:disabled{opacity:.4}
+.row2{display:flex;gap:8px}.row2 .btn{flex:1;padding:10px;font-size:.9rem}
+details.adv{margin-top:12px;border-top:1px solid var(--bd);padding-top:8px}
+details.adv summary{cursor:pointer;font-weight:700;color:var(--c1);padding:6px 0;list-style:none}
+details.adv summary::before{content:"＋ "}details.adv[open] summary::before{content:"－ "}
+details.adv summary::-webkit-details-marker{display:none}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+.sw{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}.sw button{width:34px;height:34px;border-radius:50%;border:2px solid #d7daf0;padding:0;cursor:pointer}.sw button:hover{border-color:var(--c1)}
+.vh{position:absolute;opacity:0;width:1px;height:1px}
+canvas{display:block;max-width:100%;height:auto;margin:12px auto;border:1px solid var(--bd);border-radius:10px;background:#fff}
+#single{max-width:200px}#pv{max-width:240px}
+.hint{font-size:.82rem;color:var(--mut);margin:4px 0}
+.nav{display:flex;gap:8px;align-items:center}.nav b{flex:1;text-align:center}.nav .btn{width:auto;padding:8px 16px;margin:0}
+#ov{position:fixed;inset:0;background:#eef0ff;z-index:50;overflow:auto;padding:12px}
+.ovh{display:flex;gap:8px;position:sticky;top:0;z-index:6;padding-bottom:8px;background:#eef0ff}.ovh .btn{margin-top:0}
+#pgbox{position:relative;margin:8px auto;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.25);touch-action:none}
+#pgbox img{position:absolute;cursor:grab;touch-action:none;user-select:none;-webkit-user-drag:none;outline:1px dashed #99a}
+#printRoot{display:none}
+@media print{*{-webkit-print-color-adjust:exact;print-color-adjust:exact}html,body{background:#fff!important;margin:0!important;padding:0!important;min-height:0!important}body>*:not(#printRoot){display:none!important}#printRoot{display:block!important}.pg{position:relative;overflow:hidden;break-after:page;page-break-after:always}.pg:last-child{break-after:auto;page-break-after:auto}.pg img{position:absolute}}
+[hidden]{display:none!important}
+#msg{font-weight:600;color:var(--c4)}
+footer{text-align:center;color:var(--mut);font-size:.84rem;padding:6px 16px 30px}
+</style>
+</head>
+<body>
+<header><h1>Passport Photo Maker</h1><p>Upload a photo. We find your face, change the background and get it ready to print.</p></header>
+<main>
+
+<section class="card"><h2><span class="n">1</span>Upload your photo</h2>
+<label for="f" class="btn">Choose photo</label>
+<div class="row2"><label for="cam1" class="btn ghost">Back camera</label><label for="cam2" class="btn ghost">Front camera</label></div>
+<input id="cam1" class="vh" type="file" accept="image/*" capture="environment"><input id="cam2" class="vh" type="file" accept="image/*" capture="user">
+<input id="f" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+<p class="hint" id="fn">Use a clear, front-facing photo.</p></section>
+
+<section class="card" id="s2" hidden><h2><span class="n">2</span>Background</h2>
+<label>Background colour (tap to use)</label><div class="sw" id="sw2"></div>
+<label for="bgc">Your own colour</label><input id="bgc" type="color" value="#ffffff">
+<p class="hint" id="aimsg">Runs automatically after you choose a photo. Needs internet (small download).</p>
+<canvas id="pv" width="10" height="10"></canvas>
+<button class="btn" id="ok" type="button">Looks good, continue</button>
+<details class="adv"><summary>More options</summary>
+<label for="hex">Colour code</label><input id="hex" type="text" value="#ffffff" maxlength="7" spellcheck="false" aria-label="Colour code">
+<label class="ck"><input id="gu" type="checkbox"> Use my own gradient</label>
+<div class="g"><div><label for="gt">Top colour</label><input id="gt" type="color" value="#7cbcf5"></div><div><label for="gb">Bottom colour</label><input id="gb" type="color" value="#e6f3ff"></div></div>
+<label for="bgf" class="btn ghost">Use a background picture</label><input id="bgf" class="vh" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+<label class="ck"><input id="bw" type="checkbox"> Black &amp; white photo</label>
+<label class="ck"><input id="lt" type="checkbox" checked> Auto brighten face (fixes dark photos)</label>
+<label for="br">Extra brightness</label><input id="br" type="range" min="0" max="60" value="0">
+<label class="ck"><input id="fr" type="checkbox" checked> Clean colour fringe around edges</label>
+<label for="st">Manual removal strength (if the AI cannot load)</label><input id="st" type="range" min="20" max="180" value="90">
+<button class="btn alt" id="ai" type="button">Find face &amp; remove background again</button></details></section>
+
+<section class="card" id="s3" hidden><h2><span class="n">3</span>Size &amp; dress</h2>
+<div class="g"><div><label for="mode">Output</label><select id="mode"><option value="single" selected>Single photo (online application)</option><option value="sheet">Print sheet (many photos)</option></select></div>
+<div id="szw"><label for="size">Photo size</label><select id="size">
+<option value="35x45">35 × 45 mm – Passport / Visa</option>
+<option value="51x51">51 × 51 mm (2 × 2 in)</option>
+<option value="40x50">40 × 50 mm</option>
+<option value="30x40">30 × 40 mm</option>
+<option value="33x48">33 × 48 mm – China visa</option>
+<option value="20x25">20 × 25 mm – Stamp size</option>
+<option value="88x125">88 × 125 mm – Large</option>
+<option value="custom">Custom size…</option></select></div>
+<div id="spw" hidden><label for="spx">Photo size (pixels)</label><select id="spx"><option value="600x600">600 × 600 px (2 × 2 in)</option><option value="413x531">413 × 531 px (35 × 45 mm)</option><option value="300x400">300 × 400 px</option><option value="200x200">200 × 200 px</option><option value="custom">Custom size…</option></select></div>
+<div id="cust2" hidden><label>Width × height (px)</label><div style="display:flex;gap:6px"><input id="cwp" type="number" min="50" max="4000" value="600"><input id="chp" type="number" min="50" max="4000" value="600"></div></div>
+<div id="cust" hidden><label>Width × height (mm)</label><div style="display:flex;gap:6px"><input id="cwm" type="number" min="10" max="400" value="35"><input id="chm" type="number" min="10" max="400" value="45"></div></div></div>
+<canvas id="single" width="10" height="10"></canvas>
+<details class="adv"><summary>Adjust position &amp; quality</summary>
+<label for="zm">Zoom</label><input id="zm" type="range" min="60" max="150" value="100">
+<label for="hx">Move left / right</label><input id="hx" type="range" min="-30" max="30" value="0">
+<label for="vy">Move up / down</label><input id="vy" type="range" min="-30" max="30" value="0">
+<button class="btn ghost" id="rs" type="button">Reset position</button>
+<label class="ck"><input id="en" type="checkbox"> Enhance detail (for soft or small photos)</label>
+<label for="sh">Sharpness</label><input id="sh" type="range" min="0" max="100" value="35">
+<div class="g" style="margin-top:8px"><div><label for="bd">Border</label><select id="bd"><option value="0">None</option><option value="0.3" selected>Thin (0.3 mm)</option><option value="0.5">Medium (0.5 mm)</option><option value="1">Thick (1 mm)</option></select></div>
+<div><label for="bdc">Border colour</label><input id="bdc" type="color" value="#000000"></div></div></details></section>
+
+<section class="card" id="s4" hidden><h2><span class="n">4</span>Print</h2>
+<div class="g">
+<div><label for="n">Number of copies</label><input id="n" type="number" min="1" max="200" value="6"></div>
+<div><label for="pg">Page size</label><select id="pg"><option value="a4">A4 (210 × 297 mm)</option><option value="a3">A3</option><option value="a5">A5</option><option value="letter">Letter</option><option value="4x6">4 × 6 in</option><option value="5x7">5 × 7 in</option></select></div></div>
+<p class="hint" id="info"></p>
+<div class="nav" id="nav" hidden><button class="btn ghost" id="prev" type="button">Previous</button><b id="pn"></b><button class="btn ghost" id="next" type="button">Next</button></div>
+<canvas id="sheet" width="10" height="10"></canvas>
+<button class="btn" id="prn" type="button">Print now</button>
+<button class="btn alt" id="dpdf" type="button">Download PDF</button>
+<div class="row2"><button class="btn ghost" id="prt" type="button">Move photos</button><button class="btn ghost" id="dl" type="button">Download JPG</button></div>
+<details class="adv"><summary>More layout options</summary>
+<div class="g"><div><label for="ori">Orientation</label><select id="ori"><option value="p">Portrait</option><option value="l">Landscape</option></select></div>
+<div><label for="dpi">Quality (DPI)</label><select id="dpi"><option>150</option><option>200</option><option selected>300</option><option>400</option><option>600</option></select></div>
+<div><label for="al">Arrange photos</label><select id="al"><option value="l">Left to right</option><option value="r">Right to left</option><option value="c">Centered</option></select></div>
+<div><label for="gap">Gap (mm)</label><input id="gap" type="number" min="0" max="30" step="0.5" value="3"></div>
+<div><label for="mar">Page margin (mm)</label><input id="mar" type="number" min="0" max="50" step="0.5" value="8"></div></div>
+<p class="hint">For the clearest print use the original camera photo, 300 DPI is enough, and print at 100% / Actual size.</p></details>
+<p class="hint" id="msg"></p></section>
+
+<section class="card" id="s5" hidden><h2><span class="n">4</span>Download</h2>
+<label for="kb">Maximum file size in KB (optional, e.g. 50)</label><input id="kb" type="number" min="5" max="5000" placeholder="No limit">
+<p class="hint" id="sinfo"></p>
+<button class="btn" id="dls" type="button">Download photo (JPG)</button></section>
+</main>
+<div id="ov" hidden>
+<div class="ovh"><button class="btn ghost" id="ovx" type="button">Close</button><button class="btn" id="ovp" type="button">Print</button><button class="btn alt" id="ovr" type="button">Reset</button></div>
+<div class="nav" id="ovn" hidden><button class="btn ghost" id="ovprev" type="button">Previous</button><b id="ovpn"></b><button class="btn ghost" id="ovnext" type="button">Next</button></div>
+<p class="hint">Drag any photo to move it. When ready, press Print. In the print window choose your printer (or Save as PDF), set Scale to 100% / Actual size, and paper to the same size.</p>
+<div id="pgbox"></div></div>
+<div id="printRoot"></div>
+<footer>Your photos stay on your device. Nothing is uploaded.</footer>
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var cropPx=0,origImg=null,lightLut=null,cutAdj,faceB=null,lightDirty=true,srcFile,work,cut,hT=0,hX=0,c0=0,bgI=null,ok=false,cur=0,tm,S=null;
+var PG={a4:[210,297],a3:[297,420],a5:[148,210],letter:[215.9,279.4],'4x6':[101.6,152.4],'5x7':[127,177.8]};
+function deb(f,t){clearTimeout(tm);tm=setTimeout(f,t)}
+function loadImg(file,cb){var u=URL.createObjectURL(file),im=new Image();im.onload=function(){URL.revokeObjectURL(u);cb(im)};im.onerror=function(){$('fn').textContent='Could not open this picture.'};im.src=u}
+function save(b,n){var u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)}
+function gray(x,X,Y,w,h){var im=x.getImageData(X,Y,w,h),q=im.data;for(var k=0;k<q.length;k+=4){var g=.299*q[k]+.587*q[k+1]+.114*q[k+2];q[k]=q[k+1]=q[k+2]=g}x.putImageData(im,X,Y)}
+function paintBg(x,X,Y,w,h){if(bgI){var s=Math.max(w/bgI.width,h/bgI.height),dw=bgI.width*s,dh=bgI.height*s;x.drawImage(bgI,X+(w-dw)/2,Y+(h-dh)/2,dw,dh)}else if($('gu').checked){var g=x.createLinearGradient(0,Y,0,Y+h);g.addColorStop(0,$('gt').value);g.addColorStop(1,$('gb').value);x.fillStyle=g;x.fillRect(X,Y,w,h)}else{x.fillStyle=$('bgc').value;x.fillRect(X,Y,w,h)}}
+
+$('f').onchange=function(){var f=this.files[0];if(!f)return;srcFile=f;faceB=null;$('fn').textContent=f.name;
+loadImg(f,function(im){origImg=im;var s=Math.min(1,1600/Math.max(im.width,im.height));work=document.createElement('canvas');work.width=Math.round(im.width*s);work.height=Math.round(im.height*s);work.getContext('2d').drawImage(im,0,0,work.width,work.height);
+ok=false;$('s3').hidden=$('s4').hidden=$('s5').hidden=true;$('s2').hidden=false;$('zm').value=100;$('hx').value=0;$('vy').value=0;build();runAI();$('s2').scrollIntoView({behavior:'smooth'})})};
+
+$('cam1').onchange=$('cam2').onchange=$('f').onchange;
+
+function build(){
+var w=work.width,h=work.height,id=work.getContext('2d').getImageData(0,0,w,h),d=id.data,tol=+$('st').value,x,y,i,k,R=[],G=[],B=[];
+function sm(px,py){k=(py*w+px)*4;R.push(d[k]);G.push(d[k+1]);B.push(d[k+2])}
+function md(a){a.sort(function(p,q){return p-q});return a[a.length>>1]}
+var cols=[],bands=[[.025,.06,0,1,0,1],[0,1,.025,.06,0,.45],[0,1,.94,.975,0,.45]];
+bands[0]=[0,1,.025,.06,0,1];bands[1]=[.025,.06,0,.45,0,1];bands[2]=[.94,.975,0,.45,0,1];
+for(var bi=0;bi<3;bi++){var bb=bands[bi],R=[],G=[],B=[],xa=Math.round(bb[0]*w),xb=Math.max(xa+1,Math.round(bb[1]*w)),ya=Math.round(bb[2]*h),yb=Math.max(ya+1,Math.round(bb[3]*h));
+if(bi==0){xa=0;xb=w;ya=Math.round(.025*h);yb=Math.round(.06*h)}else if(bi==1){xa=Math.round(.025*w);xb=Math.round(.06*w);ya=0;yb=Math.round(.45*h)}else{xa=Math.round(.94*w);xb=Math.round(.975*w);ya=0;yb=Math.round(.45*h)}
+for(y=ya;y<yb;y+=2)for(x=xa;x<xb;x+=2){k=(y*w+x)*4;R.push(d[k]);G.push(d[k+1]);B.push(d[k+2])}
+if(R.length)cols.push([md(R),md(G),md(B)])}
+var r0=cols[0][0],g0=cols[0][1],b0=cols[0][2],bg=new Uint8Array(w*h),st=new Int32Array(w*h),sp=0,gx0=w*.4,gx1=w*.6,gy0=h*.4,gy1=h*.85;
+var sat=Math.max(r0,g0,b0)-Math.min(r0,g0,b0),sr=r0+g0+b0||1;
+function chm(p){if(sat<=60)return false;k=p*4;var t=d[k]+d[k+1]+d[k+2];if(t<45)return false;return Math.abs(d[k]/t-r0/sr)+Math.abs(d[k+1]/t-g0/sr)+Math.abs(d[k+2]/t-b0/sr)<.2*(tol/100)}
+function dist(p){k=p*4;var m=9999;for(var j=0;j<cols.length;j++){var v=Math.abs(d[k]-cols[j][0])+Math.abs(d[k+1]-cols[j][1])+Math.abs(d[k+2]-cols[j][2]);if(v<m)m=v}return chm(p)?Math.min(m,tol-1):m}
+function sk(r,g,b){return r>80&&g>35&&b>15&&r>g&&r>b&&(r-g)>12&&(r-Math.min(g,b))>25}
+var bgSk=sk(r0,g0,b0);
+function guard(p){var px=p%w,py=(p/w)|0;if(px>gx0&&px<gx1&&py>gy0&&py<gy1)return true;if(bgSk)return false;k=p*4;return sk(d[k],d[k+1],d[k+2])}
+function diff(p,q){return Math.abs(d[p*4]-d[q*4])+Math.abs(d[p*4+1]-d[q*4+1])+Math.abs(d[p*4+2]-d[q*4+2])}
+function seed(p){if(!bg[p]&&dist(p)<tol&&!guard(p)){bg[p]=1;st[sp++]=p}}
+function nb(p,q){if(bg[q]||guard(q))return;var dq=dist(q);if((dq<tol&&(diff(p,q)<60||chm(q)))||(diff(p,q)<7&&dq<tol*1.6)){bg[q]=1;st[sp++]=q}}
+var rw=Math.max(3,Math.round(.012*w));
+for(y=0;y<h;y++)for(x=0;x<w;x++){if(y<rw||(y<h*.6&&(x<rw||x>=w-rw))){i=y*w+x;bg[i]=1;st[sp++]=i}}
+var ins=Math.max(rw+2,Math.round(.03*Math.min(w,h)));
+for(x=ins;x<w-ins;x++)seed(ins*w+x);
+for(y=ins;y<h*.6;y++){seed(y*w+ins);seed(y*w+w-1-ins)}
+for(x=0;x<w;x++)seed((h-1)*w+x);
+for(y=0;y<h;y++){seed(y*w);seed(y*w+w-1)}
+while(sp){var p=st[--sp],px=p%w,py=(p/w)|0;if(px>0)nb(p,p-1);if(px<w-1)nb(p,p+1);if(py>0)nb(p,p-w);if(py<h-1)nb(p,p+w)}
+var lab=new Int32Array(w*h),best=0,bl=0,L=0;
+for(i=0;i<w*h;i++)if(!bg[i]&&!lab[i]){L++;var c=0;sp=0;st[sp++]=i;lab[i]=L;
+while(sp){var q=st[--sp],qx=q%w,qy=(q/w)|0;c++;
+if(qx>0&&!bg[q-1]&&!lab[q-1]){lab[q-1]=L;st[sp++]=q-1}if(qx<w-1&&!bg[q+1]&&!lab[q+1]){lab[q+1]=L;st[sp++]=q+1}
+if(qy>0&&!bg[q-w]&&!lab[q-w]){lab[q-w]=L;st[sp++]=q-w}if(qy<h-1&&!bg[q+w]&&!lab[q+w]){lab[q+w]=L;st[sp++]=q+w}}
+if(c>best){best=c;bl=L}}
+var a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=lab[i]===bl?255:0;
+for(var it=0;it<2;it++){var e=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;if(a[i]&&(!a[i-1]||!a[i+1]||!a[i-w]||!a[i+w]))e[i]=0}a=e}
+for(var ps=0;ps<2;ps++){var s2=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;s2[i]=(a[i-w-1]+a[i-w]+a[i-w+1]+a[i-1]+a[i]+a[i+1]+a[i+w-1]+a[i+w]+a[i+w+1])/9}a=s2}
+for(i=0;i<w*h;i++)d[i*4+3]=a[i];
+cut=document.createElement('canvas');cut.width=w;cut.height=h;cut.getContext('2d').putImageData(id,0,0);lightDirty=true;
+finish(a,w,h);paintPv();renderAll()}
+function finish(a,w,h){var x,y;hT=0;for(y=0;y<h;y++){var n=0;for(x=0;x<w;x++)if(a[y*w+x]>128)n++;if(n>w*.04){hT=y;break}}
+c0=h*.69;var sx=0,sn=0,ye=Math.min(h,hT+Math.round(c0*.35));
+for(y=hT;y<ye;y++)for(x=0;x<w;x++)if(a[y*w+x]>128){sx+=x;sn++}
+hX=sn?sx/sn:w/2}
+
+function applyLight(){lightDirty=false;lightLut=null;if(!cut)return;var auto=$('lt').checked,extra=+$('br').value;if(!auto&&!extra){cutAdj=null;lightLut=null;return}
+var w=cut.width,h=cut.height,cx=cut.getContext('2d'),id=cx.getImageData(0,0,w,h),d=id.data,x0,x1,y0,y1,x,y,i,sum=0,n=0;
+if(faceB){x0=faceB.originX+.15*faceB.width;x1=faceB.originX+.85*faceB.width;y0=faceB.originY+.2*faceB.height;y1=faceB.originY+.9*faceB.height}else{x0=hX-.1*w;x1=hX+.1*w;y0=hT+.15*c0;y1=hT+.5*c0}
+x0=Math.max(0,Math.round(x0));x1=Math.min(w-1,Math.round(x1));y0=Math.max(0,Math.round(y0));y1=Math.min(h-1,Math.round(y1));
+for(y=y0;y<=y1;y+=2)for(x=x0;x<=x1;x+=2){i=(y*w+x)*4;if(d[i+3]>200){sum+=.299*d[i]+.587*d[i+1]+.114*d[i+2];n++}}
+var m=n>20?sum/n/255:.5,g=1;if(auto&&m<.46)g=Math.max(.55,Math.log(.46)/Math.log(Math.max(.06,m)));
+var gain=1+extra/100,lut=new Uint8Array(256);for(i=0;i<256;i++)lut[i]=Math.round(Math.min(1,Math.pow(i/255,g)*gain)*255);
+lightLut=lut;for(i=0;i<d.length;i+=4){d[i]=lut[d[i]];d[i+1]=lut[d[i+1]];d[i+2]=lut[d[i+2]]}
+cutAdj=document.createElement('canvas');cutAdj.width=w;cutAdj.height=h;cutAdj.getContext('2d').putImageData(id,0,0)}
+function paintPv(){if(lightDirty)applyLight();if(!cut)return;var c=$('pv'),w=cut.width,h=cut.height;c.width=w;c.height=h;var x=c.getContext('2d');paintBg(x,0,0,w,h);x.drawImage(cutAdj||cut,0,0);if($('bw').checked)gray(x,0,0,w,h)}
+
+function sizeMM(){var v=$('size').value;if(v=='custom')return[Math.max(10,+$('cwm').value||35),Math.max(10,+$('chm').value||45)];var p=v.split('x');return[+p[0],+p[1]]}
+function lay(){var s=sizeMM(),pg=PG[$('pg').value],o=$('ori').value=='l',pw=o?pg[1]:pg[0],ph=o?pg[0]:pg[1],m=+$('mar').value||0,g=+$('gap').value||0,dpi=+$('dpi').value,
+cols=Math.floor((pw-2*m+g)/(s[0]+g)),rows=Math.floor((ph-2*m+g)/(s[1]+g)),per=Math.max(0,cols)*Math.max(0,rows),n=Math.max(1,Math.min(200,+$('n').value||1));
+return{s:s,pw:pw,ph:ph,m:m,g:g,cols:cols,per:per,n:n,pages:per?Math.ceil(n/per):0,px:function(mm){return Math.round(mm/25.4*dpi)}}}
+function usm(id,w,h,amt,r){if(amt<=0)return;var d=id.data,N=w*h,c,i,ch=new Float32Array(N);
+for(c=0;c<3;c++){for(i=0;i<N;i++)ch[i]=d[i*4+c];var bl=bx(ch,w,h,r);for(i=0;i<N;i++){var v=d[i*4+c]+amt*(d[i*4+c]-bl[i]);d[i*4+c]=v<0?0:v>255?255:v}}}
+function photo(W,H,b){var c=document.createElement('canvas');c.width=W;c.height=H;var x=c.getContext('2d');x.fillStyle=$('bdc').value;x.fillRect(0,0,W,H);
+var iw=W-2*b,ih=H-2*b,ra=iw/ih,CW=cut.width,CH=cut.height,ch=c0,cw=ch*ra,top=hT-.09*ch;
+if(top<0)top=0;if(top+ch>CH){ch=CH-top;cw=ch*ra}if(cw>CW){cw=CW;ch=cw/ra}
+var left=Math.max(0,Math.min(hX-cw/2,CW-cw)),z=+$('zm').value/100,cx=left+cw/2+(+$('hx').value/100)*cw,cy=top+ch/2+(+$('vy').value/100)*ch,cw2=cw/z,ch2=ch/z,sc=iw/cw2;
+cropPx=cw2*(origImg?origImg.width/CW:1);var l2=cx-cw2/2,t2=cy-ch2/2,sub=document.createElement('canvas');sub.width=iw;sub.height=ih;var sx=sub.getContext('2d');sx.imageSmoothingQuality='high';
+if(origImg){var k=origImg.width/CW;sx.drawImage(origImg,l2*k,t2*k,cw2*k,ch2*k,0,0,iw,ih);sx.globalCompositeOperation='destination-in';sx.drawImage(cut,l2,t2,cw2,ch2,0,0,iw,ih);sx.globalCompositeOperation='source-over'}
+else sx.drawImage(cutAdj||cut,l2,t2,cw2,ch2,0,0,iw,ih);
+var sid=sx.getImageData(0,0,iw,ih),sd=sid.data,i;
+if(origImg&&lightLut){for(i=0;i<sd.length;i+=4){sd[i]=lightLut[sd[i]];sd[i+1]=lightLut[sd[i+1]];sd[i+2]=lightLut[sd[i+2]]}}
+var up=Math.max(1,iw/Math.max(1,cropPx)),en=$('en').checked,am=(+$('sh').value/100)*(en?1.6:.9);
+usm(sid,iw,ih,am,Math.max(1,Math.min(4,Math.round(up*.9))));
+if(en)usm(sid,iw,ih,.25,Math.max(6,Math.round(iw/40)));
+sx.putImageData(sid,0,0);
+x.save();x.beginPath();x.rect(b,b,iw,ih);x.clip();paintBg(x,b,b,iw,ih);x.drawImage(sub,b,b);x.restore();
+if($('bw').checked)gray(x,b,b,iw,ih);return c}
+function places(k,L){var a=k*L.per,e=Math.min(L.n,a+L.per),al=$('al').value,out=[];
+for(var i=a;i<e;i++){var j=i-a,r=(j/L.cols)|0,cl=j%L.cols,inRow=Math.min(L.cols,e-a-r*L.cols),xm;
+if(al=='l')xm=L.m+cl*(L.s[0]+L.g);else if(al=='r')xm=L.pw-L.m-L.s[0]-cl*(L.s[0]+L.g);else xm=(L.pw-(inRow*L.s[0]+(inRow-1)*L.g))/2+cl*(L.s[0]+L.g);
+out.push([xm,L.m+r*(L.s[1]+L.g)])}return out}
+var manual=null,manSig='',ovPage=0,photoURL=null;
+function sigOf(L){return [L.s,L.pw,L.ph,L.m,L.g,L.n,$('al').value].join('|')}
+function pos(k,L){return(manual&&manSig===sigOf(L)&&manual[k])?manual[k]:places(k,L)}
+function paintPage(c,k,L,p,sc){sc=sc||1;var f=function(mm){return Math.round(L.px(mm)*sc)};c.width=f(L.pw);c.height=f(L.ph);var x=c.getContext('2d');x.imageSmoothingQuality='high';x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+pos(k,L).forEach(function(q){x.drawImage(p,f(q[0]),f(q[1]),Math.round(p.width*sc),Math.round(p.height*sc))})}
+
+function applyMode(){var sg=$('mode').value=='single';$('szw').hidden=sg;$('spw').hidden=!sg;$('cust').hidden=sg||$('size').value!='custom';$('cust2').hidden=!(sg&&$('spx').value=='custom');$('s4').hidden=!ok||sg;$('s5').hidden=!ok||!sg;$('single').style.maxWidth=sg?'320px':'200px'}
+function renderAll(){if(!cut||!ok)return;if(lightDirty)applyLight();applyMode();
+if($('mode').value=='single'){var q=$('spx').value=='custom'?[+$('cwp').value||600,+$('chp').value||600]:$('spx').value.split('x').map(Number),W1=Math.max(50,Math.min(4000,Math.round(q[0]))),H1=Math.max(50,Math.min(4000,Math.round(q[1]))),bm1=+$('bd').value,b1=bm1>0?Math.max(1,Math.round(bm1*11.81)):0,p1=photo(W1,H1,b1),sg1=$('single');
+sg1.width=W1;sg1.height=H1;sg1.getContext('2d').drawImage(p1,0,0);S={single:true};
+var wn=cropPx<W1*.8?' Your original photo is small for this size, so it may look soft. Use a closer or higher-resolution photo.':'';sg1.toBlob(function(bl){$('sinfo').textContent=W1+' × '+H1+' px, about '+Math.round(bl.size/1024)+' KB.'+wn},'image/jpeg',.92);return}
+var L=lay(),bm=+$('bd').value,b=bm>0?Math.max(1,L.px(bm)):0,W=L.px(L.s[0]),H=L.px(L.s[1]),p=photo(W,H,b),sg=$('single');
+sg.width=W;sg.height=H;sg.getContext('2d').drawImage(p,0,0);S={L:L,p:p};
+if(L.per<1){$('info').textContent='This photo size does not fit on the page. Choose a smaller size or a larger page.';return}
+cur=Math.min(cur,L.pages-1);
+var ed=cropPx/(L.s[0]/25.4);$('info').textContent=L.per+' photos fit on one page. '+L.n+' copies need '+L.pages+' page'+(L.pages>1?'s':'')+'.'+(ed<220?' Warning: your original photo gives only about '+Math.round(ed)+' DPI for this size, so the print will look soft. Use a closer, higher-resolution photo.':'');
+$('nav').hidden=L.pages<2;$('pn').textContent='Page '+(cur+1)+' of '+L.pages;$('prev').disabled=cur<1;$('next').disabled=cur>=L.pages-1;
+var area=L.px(L.pw)*L.px(L.ph),cap=navigator.maxTouchPoints>0?16e6:60e6,sc=area>cap?Math.sqrt(cap/area):1;
+if(sc<1)$('info').textContent+=' The preview and JPG are reduced for this device; the PDF keeps full quality.';
+try{paintPage($('sheet'),cur,L,p,sc)}catch(e){$('info').textContent='The page preview is too large for your device. The PDF can still keep full quality.'}}
+
+function pdfAll(){return(async function(){var L=S.L,k,hq=hqPhoto(L),img,flt;
+if(window.CompressionStream){var id=hq.getContext('2d').getImageData(0,0,hq.width,hq.height).data,rgb=new Uint8Array(hq.width*hq.height*3),j=0;for(var i=0;i<id.length;i+=4){rgb[j++]=id[i];rgb[j++]=id[i+1];rgb[j++]=id[i+2]}
+img=new Uint8Array(await new Response(new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer());flt='/Filter/FlateDecode'}
+else{var bl=await new Promise(function(r){hq.toBlob(r,'image/jpeg',1)});img=new Uint8Array(await bl.arrayBuffer());flt='/Filter/DCTDecode'}
+var ch=[],of=[],len=0,te=new TextEncoder(),mm=72/25.4,pw=(L.pw*mm).toFixed(2),ph=(L.ph*mm).toFixed(2),w=(L.s[0]*mm).toFixed(2),h=(L.s[1]*mm).toFixed(2);
+function add(x){if(typeof x=='string')x=te.encode(x);ch.push(x);len+=x.length}
+function ob(i,s){of[i]=len;add(i+' 0 obj\n'+s+'\nendobj\n')}
+add('%PDF-1.4\n');ob(1,'<</Type/Catalog/Pages 2 0 R>>');
+var kids=[];for(k=0;k<L.pages;k++)kids.push((4+2*k)+' 0 R');
+ob(2,'<</Type/Pages/Count '+L.pages+'/Kids['+kids.join(' ')+']>>');
+of[3]=len;add('3 0 obj\n<</Type/XObject/Subtype/Image/Width '+hq.width+'/Height '+hq.height+'/ColorSpace/DeviceRGB/BitsPerComponent 8'+flt+'/Length '+img.length+'>>\nstream\n');add(img);add('\nendstream\nendobj\n');
+for(k=0;k<L.pages;k++){var pi=4+2*k,ci=5+2*k,cs='';
+pos(k,L).forEach(function(q){cs+='q '+w+' 0 0 '+h+' '+(q[0]*mm).toFixed(2)+' '+((L.ph-q[1]-L.s[1])*mm).toFixed(2)+' cm /Im0 Do Q\n'});
+ob(pi,'<</Type/Page/Parent 2 0 R/MediaBox[0 0 '+pw+' '+ph+']/Resources<</XObject<</Im0 3 0 R>>>>/Contents '+ci+' 0 R>>');
+ob(ci,'<</Length '+cs.length+'>>\nstream\n'+cs+'endstream')}
+var N=4+2*L.pages,xr=len,t='xref\n0 '+N+'\n0000000000 65535 f \n';
+for(k=1;k<N;k++)t+=('0000000000'+of[k]).slice(-10)+' 00000 n \n';
+add(t+'trailer\n<</Size '+N+'/Root 1 0 R>>\nstartxref\n'+xr+'\n%%EOF');
+return new Blob(ch,{type:'application/pdf'})})()}
+
+['st'].forEach(function(i){$(i).oninput=function(){$('aimsg').textContent='Manual mode.';deb(build,200)}});
+['zm','hx','vy','bd','bdc','n','pg','ori','dpi','al','gap','mar','cwm','chm','sh','en'].forEach(function(i){$(i).oninput=$(i).onchange=function(){deb(renderAll,80)}});
+$('size').onchange=function(){renderAll()};
+['mode','spx'].forEach(function(i){$(i).onchange=function(){renderAll()}});
+['cwp','chp'].forEach(function(i){$(i).oninput=function(){deb(renderAll,100)}});
+$('bgc').oninput=function(){$('gu').checked=false;bgI=null;$('bgf').value='';$('hex').value=$('bgc').value;paintPv();deb(renderAll,80)};
+$('hex').oninput=function(){var v=this.value.trim();if(v[0]!=='#')v='#'+v;if(/^#[0-9a-fA-F]{6}$/.test(v)){$('bgc').value=v.toLowerCase();$('gu').checked=false;bgI=null;$('bgf').value='';paintPv();deb(renderAll,80)}};
+$('bw').onchange=function(){paintPv();renderAll()};
+$('bgf').onchange=function(){var f=this.files[0];if(f)loadImg(f,function(im){bgI=im;paintPv();renderAll()})};
+$('ok').onclick=function(){ok=true;$('s3').hidden=false;renderAll();$('s3').scrollIntoView({behavior:'smooth'})};
+$('rs').onclick=function(){$('zm').value=100;$('hx').value=0;$('vy').value=0;renderAll()};
+$('dls').onclick=function(){var c=$('single'),kb=+$('kb').value||0;
+function enc(q){return new Promise(function(r){c.toBlob(r,'image/jpeg',q)})}
+(async function(){var bl=await enc(.98);
+if(kb>0){var lo=.2,hi=.95;bl=await enc(lo);if(bl.size/1024>kb){$('sinfo').textContent='Cannot reach '+kb+' KB at this size. Saved the smallest quality ('+Math.round(bl.size/1024)+' KB). Try a smaller pixel size.'}
+else{for(var i=0;i<8;i++){var m=(lo+hi)/2,t=await enc(m);if(t.size/1024<=kb){lo=m;bl=t}else hi=m}$('sinfo').textContent='Saved: '+Math.round(bl.size/1024)+' KB'}}
+save(bl,'passport-photo.jpg')})()};
+(function(){var G=[['#ffffff','#ffffff','White'],['#7cbcf5','#e6f3ff','Sky blue'],['#9a9a9a','#f5f5f5','Grey'],['#7a849e','#c9cfdf','Slate'],['#f5b7c8','#ffeef3','Pink'],['#9fd8c4','#effaf5','Mint'],['#b7a6f0','#f1edff','Lavender'],['#f6b99a','#fff0e8','Peach'],['#5b7fc7','#dbe6fb','Royal blue'],['#e6d3a8','#fbf6e6','Cream'],['#3f77c4','#cfe3fa','Deep to light blue'],
+['#1e3a8a','#93c5fd','Navy to sky'],['#0369a1','#7dd3fc','Ocean'],['#0f766e','#99f6e4','Deep teal'],['#166534','#bbf7d0','Forest green'],['#6b21a8','#e9d5ff','Deep purple'],['#991b1b','#fecaca','Crimson'],['#c2410c','#fed7aa','Sunset'],['#be185d','#fbcfe8','Deep rose'],['#3730a3','#c7d2fe','Indigo'],['#1f2937','#d1d5db','Charcoal'],['#78350f','#fde68a','Brown gold']],h=$('sw2');
+G.forEach(function(c){var b=document.createElement('button');b.type='button';b.style.background='linear-gradient(to bottom,'+c[0]+','+c[1]+')';b.title=c[2];b.setAttribute('aria-label',c[2]);b.onclick=function(){if(c[0]===c[1]){$('bgc').value=c[0];$('bgc').oninput();return}$('gt').value=c[0];$('gb').value=c[1];$('gu').checked=true;bgI=null;$('bgf').value='';paintPv();deb(renderAll,80)};h.appendChild(b)});
+['gu','gt','gb'].forEach(function(i){$(i).oninput=$(i).onchange=function(){if(i!=='gu')$('gu').checked=true;bgI=null;$('bgf').value='';paintPv();deb(renderAll,80)}})})();
+var mp=null;
+function bx(s,w,h,r){var N=w*h,t=new Float32Array(N),d=new Float32Array(N),x,y,a,o,k;
+for(y=0;y<h;y++){a=0;o=y*w;for(x=0;x<=r&&x<w;x++)a+=s[o+x];for(x=0;x<w;x++){t[o+x]=a;k=x+r+1;if(k<w)a+=s[o+k];k=x-r;if(k>=0)a-=s[o+k]}}
+for(x=0;x<w;x++){a=0;for(y=0;y<=r&&y<h;y++)a+=t[y*w+x];for(y=0;y<h;y++){d[y*w+x]=a;k=y+r+1;if(k<h)a+=t[k*w+x];k=y-r;if(k>=0)a-=t[k*w+x]}}
+for(y=0;y<h;y++){var cy=Math.min(h-1,y+r)-Math.max(0,y-r)+1;for(x=0;x<w;x++)d[y*w+x]/=cy*(Math.min(w-1,x+r)-Math.max(0,x-r)+1)}return d}
+function gf(I,p,w,h,r,e){var N=w*h,i,I2=new Float32Array(N),Ip=new Float32Array(N);for(i=0;i<N;i++){I2[i]=I[i]*I[i];Ip[i]=I[i]*p[i]}
+var mI=bx(I,w,h,r),mp=bx(p,w,h,r),cI=bx(I2,w,h,r),cIp=bx(Ip,w,h,r),a=new Float32Array(N),b=new Float32Array(N);
+for(i=0;i<N;i++){var v=cI[i]-mI[i]*mI[i],c=cIp[i]-mI[i]*mp[i];a[i]=c/(v+e);b[i]=mp[i]-a[i]*mI[i]}
+var ma=bx(a,w,h,r),mb=bx(b,w,h,r),q=new Float32Array(N);for(i=0;i<N;i++)q[i]=ma[i]*I[i]+mb[i];return q}
+function bbox(a,w,h){var x0=w,y0=h,x1=0,y1=0,x,y;for(y=0;y<h;y+=2)for(x=0;x<w;x+=2)if(a[y*w+x]>128){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}return x1>x0&&y1>y0?[x0,y0,x1,y1]:[0,0,w,h]}
+function retryFace(o,a,w,h){try{var bb=bbox(a,w,h),rx0=Math.max(0,bb[0]-.05*w),rx1=Math.min(w,bb[2]+.05*w),ry0=bb[1],ry1=Math.min(h,bb[1]+(bb[3]-bb[1])*.4),rw=rx1-rx0,rh=ry1-ry0,sc=Math.min(4,Math.max(1,640/Math.max(rw,rh))),c=document.createElement('canvas');c.width=Math.round(rw*sc);c.height=Math.round(rh*sc);c.getContext('2d').drawImage(work,rx0,ry0,rw,rh,0,0,c.width,c.height);
+var r=o.fd.detect(c),bx=r&&r.detections&&r.detections[0]&&r.detections[0].boundingBox;if(!bx)return null;return{originX:rx0+bx.originX/sc,originY:ry0+bx.originY/sc,width:bx.width/sc,height:bx.height/sc}}catch(e){return null}}
+function refine(a0,w,h,fb,Pc){var a=a0.slice(),d=work.getContext('2d').getImageData(0,0,w,h).data,N=w*h,q=new Int32Array(N),i,x,y,tot=0,rem=0;for(i=0;i<N;i++)if(a[i]>=30)tot++;
+for(var pass=0;pass<2;pass++){var ref=new Int32Array(N).fill(-1),dep=new Uint8Array(N),qh=0,qt=0;
+for(i=0;i<N;i++)if(a[i]<30){x=i%w;y=(i/w)|0;if((x>0&&a[i-1]>=30)||(x<w-1&&a[i+1]>=30)||(y>0&&a[i-w]>=30)||(y<h-1&&a[i+w]>=30)){ref[i]=i;q[qt++]=i}}
+while(qh<qt){var p=q[qh++];if(dep[p]>=28)continue;x=p%w;y=(p/w)|0;var nn=[x>0?p-1:-1,x<w-1?p+1:-1,y>0?p-w:-1,y<h-1?p+w:-1];
+for(var k=0;k<4;k++){var n=nn[k];if(n>=0&&a[n]>=30&&ref[n]<0){ref[n]=ref[p];dep[n]=dep[p]+1;q[qt++]=n}}}
+for(i=0;i<N;i++)if(a[i]>=30&&ref[i]>=0&&ref[i]!==i&&(!Pc||Pc[i]<.9)){x=i%w;y=(i/w)|0;
+if(fb&&x>fb.originX&&x<fb.originX+fb.width&&y>fb.originY&&y<fb.originY+fb.height)continue;
+var r=ref[i]*4,j=i*4;if(Math.abs(d[j]-d[r])+Math.abs(d[j+1]-d[r+1])+Math.abs(d[j+2]-d[r+2])<45&&Math.max(d[j],d[j+1],d[j+2])-Math.min(d[j],d[j+1],d[j+2])>50&&Math.max(d[r],d[r+1],d[r+2])-Math.min(d[r],d[r+1],d[r+2])>50){a[i]=0;rem++}}}
+if(rem>tot*.12)return a0;
+for(var ps=0;ps<2;ps++){var c=a.slice();for(y=1;y<h-1;y++)for(x=1;x<w-1;x++){i=y*w+x;c[i]=(a[i-w-1]+a[i-w]+a[i-w+1]+a[i-1]+a[i]+a[i+1]+a[i+w-1]+a[i+w]+a[i+w+1])/9}a=c}
+return a}
+async function getMP(){if(mp)return mp;
+var V='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14',M=await import(V+'/vision_bundle.mjs'),fs=await M.FilesetResolver.forVisionTasks(V+'/wasm'),G='https://storage.googleapis.com/mediapipe-models/';
+var seg=await M.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:G+'image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',delegate:'CPU'},runningMode:'IMAGE',outputConfidenceMasks:true,outputCategoryMask:false});
+var fd=await M.FaceDetector.createFromOptions(fs,{baseOptions:{modelAssetPath:G+'face_detector/blaze_face_short_range/float16/latest/blaze_face_short_range.tflite',delegate:'CPU'},runningMode:'IMAGE'});
+mp={seg:seg,fd:fd};return mp}
+async function runAI(){if(!work)return;var m=$('aimsg'),btn=$('ai');btn.disabled=true;m.textContent='Finding your face and removing the background… (first time can take a minute)';
+try{var o=await getMP(),w=work.width,h=work.height,i,x,y,fr=o.fd.detect(work),fb=fr&&fr.detections&&fr.detections[0]&&fr.detections[0].boundingBox,
+res=o.seg.segment(work),mk=res.confidenceMasks[0],mw=mk.width,mh=mk.height,f=mk.getAsFloat32Array(),inv=false;
+if(fb){var x0=Math.max(0,Math.floor((fb.originX+fb.width*.3)/w*mw)),x1=Math.min(mw-1,Math.ceil((fb.originX+fb.width*.7)/w*mw)),y0=Math.max(0,Math.floor((fb.originY+fb.height*.3)/h*mh)),y1=Math.min(mh-1,Math.ceil((fb.originY+fb.height*.7)/h*mh)),fs=0,fn=0;
+for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++){fs+=f[y*mw+x];fn++}inv=fn?fs/fn<.5:false}
+else{var bs=0,bn=0;for(x=0;x<mw;x+=2){bs+=f[x]+f[(mh-1)*mw+x];bn+=2}for(y=0;y<mh;y+=2){bs+=f[y*mw]+f[y*mw+mw-1];bn+=2}inv=bs/bn>.5}
+var fc=$('fr').checked,mc=document.createElement('canvas');mc.width=mw;mc.height=mh;var mx=mc.getContext('2d'),id=mx.createImageData(mw,mh),fg=0;
+for(i=0;i<mw*mh;i++){var v=inv?1-f[i]:f[i];if(v>.5)fg++;v=Math.min(1,Math.max(0,fc?v:(v-.22)/.4));id.data[i*4+3]=Math.round(v*255)}
+mx.putImageData(id,0,0);var fr2=fg/(mw*mh),good=fr2>=.05&&fr2<=.92;
+if(good&&fc){var pc=document.createElement('canvas');pc.width=w;pc.height=h;var px=pc.getContext('2d');px.imageSmoothingQuality='high';px.drawImage(mc,0,0,w,h);
+var pd=px.getImageData(0,0,w,h).data,wd=work.getContext('2d').getImageData(0,0,w,h).data,P=new Float32Array(w*h),Gd=new Float32Array(w*h);
+for(i=0;i<w*h;i++){P[i]=pd[i*4+3]/255;Gd[i]=(.299*wd[i*4]+.587*wd[i*4+1]+.114*wd[i*4+2])/255}
+var Q=gf(Gd,P,w,h,Math.max(6,Math.round(w/90)),.0006);
+cut=document.createElement('canvas');cut.width=w;cut.height=h;var cx0=cut.getContext('2d'),oi=cx0.createImageData(w,h);
+for(i=0;i<w*h;i++){var qq=Math.min(1,Math.max(0,(Q[i]-.42)/.3));oi.data[i*4]=wd[i*4];oi.data[i*4+1]=wd[i*4+1];oi.data[i*4+2]=wd[i*4+2];oi.data[i*4+3]=Math.round(qq*255)}cx0.putImageData(oi,0,0)}
+else if(good){cut=document.createElement('canvas');cut.width=w;cut.height=h;var cx=cut.getContext('2d');cx.drawImage(work,0,0);cx.globalCompositeOperation='destination-in';cx.imageSmoothingQuality='high';cx.drawImage(mc,0,0,w,h);cx.globalCompositeOperation='source-over'}
+var cc=cut.getContext('2d'),im2=cc.getImageData(0,0,w,h),dd=im2.data,a=new Uint8Array(w*h);for(i=0;i<w*h;i++)a[i]=dd[i*4+3];
+if(!fb)fb=retryFace(o,a,w,h);
+if(good&&fc){a=refine(a,w,h,fb,P);for(i=0;i<w*h;i++)dd[i*4+3]=a[i];cc.putImageData(im2,0,0)}
+finish(a,w,h);
+if(fb){hT=Math.max(fb.originY-.9*fb.height,Math.min(hT,fb.originY-.1*fb.height));var hh=fb.originY+fb.height*1.04-hT;c0=hh/.68;hX=fb.originX+fb.width/2}else{var bb=bbox(a,w,h),bw=bb[2]-bb[0],bh=bb[3]-bb[1],hh2=bh>1.6*bw?bh*.15:bh*.5;c0=hh2/.68}
+faceB=fb||null;lightDirty=true;$('zm').value=100;$('hx').value=0;$('vy').value=0;paintPv();ok=true;renderAll();$('s3').hidden=false;$('s3').scrollIntoView({behavior:'smooth'});
+m.textContent=good?(fb?'Done. Face found and background removed automatically.':'Background removed. Face not found, please adjust the position below.'):'Automatic background removal was not reliable for this photo. Using manual strength; use the slider above. '+(fb?'Face found and cropped.':'Face not found.')}
+catch(e){m.textContent='Automatic mode could not load (it needs internet; open the website link, not a saved file). Using the manual strength slider instead.'}
+btn.disabled=false}
+$('ai').onclick=runAI;['lt','br'].forEach(function(i){$(i).oninput=$(i).onchange=function(){lightDirty=true;paintPv();deb(renderAll,80)}});$('fr').onchange=function(){if(work)runAI()};
+$('prev').onclick=function(){cur--;renderAll()};$('next').onclick=function(){cur++;renderAll()};
+function hqPhoto(L){var q=600,W=Math.round(L.s[0]/25.4*q),H=Math.round(L.s[1]/25.4*q),bm=+$('bd').value,b=bm>0?Math.max(1,Math.round(bm/25.4*q)):0;return photo(W,H,b)}
+function prep(cb){if(!S||!S.L||S.L.per<1)return;var L=S.L;if(!manual||manSig!==sigOf(L)){manual=[];for(var k=0;k<L.pages;k++)manual.push(places(k,L).map(function(q){return q.slice()}));manSig=sigOf(L)}
+hqPhoto(L).toBlob(function(b){if(photoURL)URL.revokeObjectURL(photoURL);photoURL=URL.createObjectURL(b);cb()},'image/png')}
+function drawOv(){var L=S.L,box=$('pgbox'),W=Math.min(window.innerWidth-24,640),f=W/L.pw;box.style.width=W+'px';box.style.height=(L.ph*f)+'px';box.innerHTML='';
+$('ovn').hidden=L.pages<2;$('ovpn').textContent='Page '+(ovPage+1)+' of '+L.pages;$('ovprev').disabled=ovPage<1;$('ovnext').disabled=ovPage>=L.pages-1;
+manual[ovPage].forEach(function(q){var im=new Image();im.src=photoURL;im.draggable=false;im.style.cssText='left:'+q[0]*f+'px;top:'+q[1]*f+'px;width:'+L.s[0]*f+'px;height:'+L.s[1]*f+'px';
+var sx,sy,ox,oy;im.onpointerdown=function(e){e.preventDefault();im.setPointerCapture(e.pointerId);sx=e.clientX;sy=e.clientY;ox=q[0];oy=q[1];im.style.zIndex=5;im.style.cursor='grabbing'};
+im.onpointermove=function(e){if(!im.hasPointerCapture(e.pointerId))return;var nx=Math.max(0,Math.min(L.pw-L.s[0],ox+(e.clientX-sx)/f)),ny=Math.max(0,Math.min(L.ph-L.s[1],oy+(e.clientY-sy)/f));q[0]=Math.round(nx*10)/10;q[1]=Math.round(ny*10)/10;im.style.left=q[0]*f+'px';im.style.top=q[1]*f+'px'};
+im.onpointerup=im.onpointercancel=function(){im.style.zIndex='';im.style.cursor='grab'};box.appendChild(im)})}
+function printNow(){var L=S.L,root=$('printRoot'),sty=$('pgstyle');if(!sty){sty=document.createElement('style');sty.id='pgstyle';document.head.appendChild(sty)}
+sty.textContent='@page{size:'+L.pw+'mm '+L.ph+'mm;margin:0}';root.innerHTML='';
+for(var k=0;k<L.pages;k++){var d=document.createElement('div');d.className='pg';d.style.width=L.pw+'mm';d.style.height=(L.ph-.5)+'mm';
+pos(k,L).forEach(function(q){var im=new Image();im.src=photoURL;im.style.cssText='left:'+q[0]+'mm;top:'+q[1]+'mm;width:'+L.s[0]+'mm;height:'+L.s[1]+'mm';d.appendChild(im)});root.appendChild(d)}
+Promise.all(Array.prototype.map.call(root.querySelectorAll('img'),function(i){return i.decode?i.decode().catch(function(){}):Promise.resolve()})).then(function(){window.print()})}
+$('prn').onclick=function(){prep(printNow)};
+$('prt').onclick=function(){prep(function(){ovPage=Math.min(cur,S.L.pages-1);$('ov').hidden=false;drawOv()})};
+$('ovx').onclick=function(){$('ov').hidden=true;renderAll()};
+$('ovp').onclick=printNow;
+$('ovr').onclick=function(){manual=null;prep(drawOv)};
+$('ovprev').onclick=function(){ovPage--;drawOv()};$('ovnext').onclick=function(){ovPage++;drawOv()};
+$('dl').onclick=function(){$('sheet').toBlob(function(b){save(b,'passport-photos-page-'+(cur+1)+'.jpg')},'image/jpeg',.99)};
+$('dpdf').onclick=function(){if(!S||S.L.per<1)return;$('msg').textContent='Preparing PDF…';pdfAll().then(function(b){save(b,'passport-photos.pdf');$('msg').textContent='PDF downloaded.'},function(){$('msg').textContent='Could not make the PDF. Try a lower DPI.'})};
+})();
+</script>
+</body>
+</html>
