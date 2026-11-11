@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SmartDoc Studio</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14202b;--mut:#5b6b7a;--ac:#0b6e4f;--acx:#fff;--ln:#d5dde5;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1419;--card:#18212a;--ink:#e6edf3;--mut:#93a3b3;--ac:#3fbf91;--acx:#07140f;--ln:#2a3641;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0e1419;--card:#18212a;--ink:#e6edf3;--mut:#93a3b3;--ac:#3fbf91;--acx:#07140f;--ln:#2a3641;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,"Noto Sans Bengali",sans-serif;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+header{display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--ln);background:var(--card)}
+header h1{font-size:1.2rem;margin:0;flex:1;letter-spacing:-.01em}
+button,.btn,select,input[type=text],input:not([type]){font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--ln);border-radius:8px;padding:8px 12px}
+button,.btn{cursor:pointer;display:inline-block}
+button:hover,.btn:hover{border-color:var(--ac)}
+button:focus-visible,.btn:focus-within,select:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.pri{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;padding:16px;max-width:1000px;margin:auto}
+nav button{padding:14px 8px;text-align:left;font-weight:600}
+nav button.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+main{max-width:1000px;margin:auto;padding:0 16px 32px}
+.pn{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.hint,#st{color:var(--mut);font-size:.9rem;margin:6px 0}
+canvas{max-width:100%;height:auto;display:block;border:1px solid var(--ln);touch-action:none;background:#888}
+.cw{overflow:auto;max-height:70vh}
+video{max-width:100%;border-radius:8px}
+textarea{width:100%;min-height:200px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:8px}
+a{color:var(--ac)}
+footer{max-width:1000px;margin:auto;padding:0 16px 24px;color:var(--mut);font-size:.85rem}
+[hidden]{display:none!important}
+.emode.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+#panel{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--ln);margin-top:10px;padding-top:10px}
+#panel label{display:inline-flex;align-items:center;gap:4px;font-size:.85rem}
+</style></head><body>
+<header><h1>SmartDoc Studio</h1><button id="lang">বাংলা</button><button id="th">Dark / Light</button></header>
+<nav id="nav"></nav>
+<main>
+<section id="p-scan" class="pn" hidden>
+ <div class="row"><label class="btn pri">Upload photo<input type="file" id="sf" accept="image/*" hidden></label><button id="cam">Use camera</button></div>
+ <video id="vid" playsinline hidden></video>
+ <div id="camb" class="row" hidden><button id="shot" class="pri">Capture</button><button id="camx">Close camera</button></div>
+ <div id="sw" hidden>
+  <p class="hint">Drag the four corner dots onto the document corners, then tap Crop.</p>
+  <canvas id="cv"></canvas>
+  <div class="row"><button id="auto">Auto detect</button><button id="rl">Rotate left</button><button id="rr">Rotate right</button><button id="rst">Reset</button><button id="ap" class="pri">Crop</button></div>
+  <div id="rw" hidden>
+   <canvas id="res"></canvas>
+   <div class="row"><select id="flt"><option value="none">Original</option><option value="doc">Document enhance</option><option value="col">Color enhance</option><option value="gray">Grayscale</option><option value="bw">Black &amp; white</option></select>
+   <button id="nxt">Save this side, scan next (back side)</button></div>
+   <div class="row"><button id="dj" class="pri">Download JPG</button><button id="dp" class="pri">Download PDF</button><span id="cnt" class="hint"></span></div>
+  </div>
+ </div>
+</section>
+<section id="p-edit" class="pn" hidden>
+ <label class="btn pri">Open PDF<input type="file" id="ef" accept="application/pdf" hidden></label>
+ <div id="ew" hidden>
+  <div class="row" id="etool">
+   <button data-m="select" class="emode on">Select</button>
+   <button data-m="edit" class="emode">Edit text</button>
+   <button data-m="hand" class="emode">Hand</button>
+   <button data-m="text" class="emode">Text</button>
+   <button data-m="hl" class="emode">Highlight</button>
+   <button data-m="redact" class="emode">Blackout</button>
+   <button data-m="white" class="emode">Whiteout</button>
+   <button data-m="mask" class="emode">Custom mask</button>
+   <button data-m="rect" class="emode">Shape</button>
+   <button data-m="pen" class="emode">Draw</button>
+   <button id="un">Undo</button><button id="rd">Redo</button>
+  </div>
+  <div class="row"><button id="pv">Prev</button><span id="pg"></span><button id="nx">Next</button><button id="zo">Zoom −</button><button id="zi">Zoom +</button><button id="origtog">Hold to view original</button></div>
+  <div class="cw"><canvas id="ec"></canvas></div>
+  <div id="panel" hidden>
+   <div class="row"><label>X<input type="number" id="px" style="width:70px"></label><label>Y<input type="number" id="py" style="width:70px"></label><label>W<input type="number" id="pw" style="width:70px"></label><label>H<input type="number" id="ph" style="width:70px"></label></div>
+   <div class="row"><label>Colour<input type="color" id="pc" value="#000000"></label><label>Opacity<input type="range" id="po" min="0.1" max="1" step="0.05" value="1"></label></div>
+   <div class="row" id="textRow" hidden>
+    <select id="pff"><option value="Helvetica">Helvetica</option><option value="TimesRoman">Times</option><option value="Courier">Courier</option></select>
+    <input type="number" id="pfs" value="14" min="6" max="120" style="width:64px" title="Font size">
+    <label><input type="checkbox" id="pb">Bold</label><label><input type="checkbox" id="pi">Italic</label><label><input type="checkbox" id="pu">Underline</label>
+    <select id="pal"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select>
+    <input type="number" id="pls" value="1.2" step=".1" min="0.8" max="3" style="width:56px" title="Line spacing">
+    <label><input type="checkbox" id="pcov">Cover original</label><label>Cover colour<input type="color" id="pbgc" value="#ffffff"></label>
+   </div>
+   <div class="row" id="textArea2" hidden><textarea id="ptx" placeholder="Type text (Latin letters only)"></textarea></div>
+   <div class="row"><button id="pocr">Detect text in this area (OCR)</button></div>
+   <p id="pocrres" class="hint"></p>
+   <div class="row"><button id="papply" class="pri">Done</button><button id="pdel">Delete this item</button></div>
+  </div>
+  <div class="row"><input id="wm" placeholder="Watermark (optional)"><label><input type="checkbox" id="pnum"> Page numbers</label><button id="sv" class="pri">Save edited PDF</button></div>
+  <p class="hint">Corrections are drawn on top of the page; your original file is never changed and stays downloadable separately. Blackout, whiteout and custom mask permanently cover the selected area only in the exported copy. "Edit text" works only on computer-generated (non-scanned) PDF pages: tap existing text to select it, retype it, and tick "Cover original" to paint over the old text with the cover colour before the new text is drawn — this is a position-matched overlay, not a true rewrite of the PDF's internal text, and detected position, size and colour are approximate. Bengali/Hindi typed text isn't supported yet — Latin letters only.</p>
+ </div>
+</section>
+<div id="tools"></div>
+<p id="st" aria-live="polite"></p>
+</main>
+<footer>Everything runs in your browser; files are not uploaded anywhere. This tool scans, crops, annotates and converts documents. It does not alter or recreate identity details on official documents.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),st=m=>$('#st').textContent=m||'';
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const TXT={en:{scan:'Scan Document',edit:'Edit PDF',i2p:'Image to PDF',p2i:'PDF to Image',merge:'Merge PDF',split:'Split PDF',comp:'Compress PDF',ocr:'OCR Scanner'},
+bn:{scan:'ডকুমেন্ট স্ক্যান',edit:'PDF এডিট',i2p:'ছবি থেকে PDF',p2i:'PDF থেকে ছবি',merge:'PDF জোড়া',split:'PDF ভাগ',comp:'PDF ছোট করা',ocr:'OCR স্ক্যানার'}};
+let lang='en',cur='scan';
+function nav(){$('#nav').innerHTML=Object.keys(TXT.en).map(k=>`<button data-k="${k}" class="${k==cur?'on':''}">${TXT[lang][k]}</button>`).join('')}
+$('#nav').onclick=e=>{const k=e.target.dataset.k;if(!k)return;cur=k;nav();st();show()};
+function show(){document.querySelectorAll('.pn').forEach(p=>p.hidden=p.id!='p-'+cur);document.querySelectorAll('.tp').forEach(p=>p.hidden=p.id!='t-'+cur)}
+$('#lang').onclick=()=>{lang=lang=='en'?'bn':'en';$('#lang').textContent=lang=='en'?'বাংলা':'English';nav()};
+$('#th').onclick=()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark'};
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),9e3)}
+const jpg=(c,q)=>new Promise(r=>c.toBlob(r,'image/jpeg',q));
+async function loadC(f){const b=await createImageBitmap(f),c=document.createElement('canvas');c.width=b.width;c.height=b.height;c.getContext('2d').drawImage(b,0,0);return c}
+async function toPdf(cs,q){const d=await PDFLib.PDFDocument.create();for(const c of cs){const im=await d.embedJpg(await (await jpg(c,q)).arrayBuffer()),s=595/c.width,p=d.addPage([595,c.height*s]);p.drawImage(im,{x:0,y:0,width:595,height:c.height*s})}return new Blob([await d.save()],{type:'application/pdf'})}
+const pdfOf=async f=>pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise;
+async function rend(pdf,n,sc){const pg=await pdf.getPage(n),vp=pg.getViewport({scale:sc}),c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;return c}
+
+/* ---------- SCAN ---------- */
+const S={c:document.createElement('canvas'),pts:[],d:-1,set:[],res:null},F={none:'none',doc:'grayscale(1) contrast(1.5) brightness(1.1)',col:'contrast(1.25) brightness(1.08) saturate(1.1)',gray:'grayscale(1)',bw:'grayscale(1) contrast(4) brightness(1.1)'};
+const cv=$('#cv'),cx=cv.getContext('2d');
+function setSrc(c){S.c=c;S.res=null;$('#rw').hidden=true;$('#sw').hidden=false;detect();draw()}
+function k(){return Math.min(1,900/S.c.width)}
+function draw(){const q=k();cv.width=S.c.width*q;cv.height=S.c.height*q;cx.drawImage(S.c,0,0,cv.width,cv.height);cx.strokeStyle='#e8a317';cx.lineWidth=3;cx.beginPath();S.pts.forEach((p,i)=>cx[i?'lineTo':'moveTo'](p[0]*q,p[1]*q));cx.closePath();cx.stroke();cx.fillStyle='#e8a317';S.pts.forEach(p=>{cx.beginPath();cx.arc(p[0]*q,p[1]*q,11,0,7);cx.fill()})}
+function detect(){const w=S.c.width,h=S.c.height,z=Math.min(1,320/Math.max(w,h)),sw=Math.round(w*z),sh=Math.round(h*z),t=document.createElement('canvas');t.width=sw;t.height=sh;const x=t.getContext('2d');x.filter='blur(2px)';x.drawImage(S.c,0,0,sw,sh);
+const d=x.getImageData(0,0,sw,sh).data,g=new Uint8Array(sw*sh),H=new Array(256).fill(0);
+for(let i=0;i<g.length;i++){g[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;H[g[i]]++}
+let tot=g.length,sum=0,sb=0,wb=0,mx=0,th=128;for(let i=0;i<256;i++)sum+=i*H[i];
+for(let i=0;i<256;i++){wb+=H[i];const wf=tot-wb;if(!wb)continue;if(!wf)break;sb+=i*H[i];const mb=sb/wb,mf=(sum-sb)/wf,v=wb*wf*(mb-mf)**2;if(v>mx){mx=v;th=i}}
+let bs=0,bn=0;for(let i=0;i<sw;i++){bs+=g[i]+g[(sh-1)*sw+i];bn+=2}for(let j=0;j<sh;j++){bs+=g[j*sw]+g[j*sw+sw-1];bn+=2}
+const light=bs/bn<th;let tl=[1e9],br=[-1e9],tr=[-1e9],bl=[1e9],n=0;
+for(let y=0;y<sh;y++)for(let x2=0;x2<sw;x2++){if((g[y*sw+x2]>th)!=light)continue;n++;const a=x2+y,b=x2-y;if(a<tl[0])tl=[a,x2,y];if(a>br[0])br=[a,x2,y];if(b>tr[0])tr=[b,x2,y];if(b<bl[0])bl=[b,x2,y]}
+if(n<tot*.08)S.pts=[[.05*w,.05*h],[.95*w,.05*h],[.95*w,.95*h],[.05*w,.95*h]];
+else S.pts=[tl,tr,br,bl].map(p=>[p[1]/z,p[2]/z]);draw()}
+cv.onpointerdown=e=>{const r=cv.getBoundingClientRect(),q=k(),sx=cv.width/r.width,x=(e.clientX-r.left)*sx,y=(e.clientY-r.top)*sx;let b=40*sx;S.d=-1;S.pts.forEach((p,i)=>{const d=Math.hypot(p[0]*q-x,p[1]*q-y);if(d<b){b=d;S.d=i}});if(S.d>=0)cv.setPointerCapture(e.pointerId)};
+cv.onpointermove=e=>{if(S.d<0)return;const r=cv.getBoundingClientRect(),q=k(),sx=cv.width/r.width;S.pts[S.d]=[Math.max(0,Math.min(S.c.width,(e.clientX-r.left)*sx/q)),Math.max(0,Math.min(S.c.height,(e.clientY-r.top)*sx/q))];draw()};
+cv.onpointerup=()=>S.d=-1;
+function warp(){const p=S.pts,ds=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);let W=Math.max(ds(p[0],p[1]),ds(p[3],p[2])),Hh=Math.max(ds(p[0],p[3]),ds(p[1],p[2]));const m=Math.min(1,3000/Math.max(W,Hh));W=Math.round(W*m);Hh=Math.round(Hh*m);
+if(W<10||Hh<10)return st('Crop area is too small.');
+const sw=S.c.width,sh=S.c.height,sd=S.c.getContext('2d').getImageData(0,0,sw,sh).data,o=document.createElement('canvas');o.width=W;o.height=Hh;const ox=o.getContext('2d'),od=ox.createImageData(W,Hh),D=od.data;
+const [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=p,dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3,den0=dx1*dy2-dx2*dy1;
+const g=(dx3*dy2-dx2*dy3)/den0,h=(dx1*dy3-dx3*dy1)/den0,a=x1-x0+g*x1,b=x3-x0+h*x3,d=y1-y0+g*y1,e=y3-y0+h*y3;
+for(let y=0;y<Hh;y++)for(let x=0;x<W;x++){const u=x/W,v=y/Hh,dn=g*u+h*v+1,fx=(a*u+b*v+x0)/dn,fy=(d*u+e*v+y0)/dn,ix=Math.max(0,Math.min(sw-2,Math.floor(fx))),iy=Math.max(0,Math.min(sh-2,Math.floor(fy))),tx=Math.max(0,Math.min(1,fx-ix)),ty=Math.max(0,Math.min(1,fy-iy)),i=(iy*sw+ix)*4,o2=(y*W+x)*4;
+for(let c=0;c<4;c++)D[o2+c]=(sd[i+c]*(1-tx)+sd[i+4+c]*tx)*(1-ty)+(sd[i+sw*4+c]*(1-tx)+sd[i+sw*4+4+c]*tx)*ty}
+ox.putImageData(od,0,0);S.res=o;const r=$('#res');r.width=W;r.height=Hh;r.getContext('2d').drawImage(o,0,0);$('#rw').hidden=false;filt();r.scrollIntoView({behavior:'smooth'})}
+function filt(){$('#res').style.filter=F[$('#flt').value]}
+function outC(){const c=document.createElement('canvas');c.width=S.res.width;c.height=S.res.height;const x=c.getContext('2d');x.filter=F[$('#flt').value];x.drawImage(S.res,0,0);return c}
+$('#sf').onchange=async e=>{const f=e.target.files[0];if(f){S.set=[];$('#cnt').textContent='';setSrc(await loadC(f))}};
+$('#auto').onclick=detect;$('#ap').onclick=warp;$('#flt').onchange=filt;
+$('#rst').onclick=()=>{$('#rw').hidden=true;detect()};
+function rot(dir){const c=document.createElement('canvas');c.width=S.c.height;c.height=S.c.width;const x=c.getContext('2d');x.translate(c.width/2,c.height/2);x.rotate(dir*Math.PI/2);x.drawImage(S.c,-S.c.width/2,-S.c.height/2);setSrc(c)}
+$('#rl').onclick=()=>rot(-1);$('#rr').onclick=()=>rot(1);
+$('#dj').onclick=async()=>dl(await jpg(outC(),.95),'scan.jpg');
+$('#dp').onclick=async()=>{st('Building PDF…');dl(await toPdf([...S.set,outC()],.95),'scan.pdf');st('')};
+$('#nxt').onclick=()=>{S.set.push(outC());$('#cnt').textContent=S.set.length+' side(s) saved. Upload the next side.';$('#sw').hidden=true;$('#rw').hidden=true};
+let stream;
+$('#cam').onclick=async()=>{try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:3000}}});$('#vid').srcObject=stream;await $('#vid').play();$('#vid').hidden=false;$('#camb').hidden=false}catch(e){st('Camera not available: '+e.message)}};
+function camOff(){stream&&stream.getTracks().forEach(t=>t.stop());$('#vid').hidden=true;$('#camb').hidden=true}
+$('#camx').onclick=camOff;
+$('#shot').onclick=()=>{const v=$('#vid'),c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);camOff();setSrc(c)};
+
+/* ---------- PDF EDITOR ---------- */
+const DRAWM=['text','hl','redact','white','mask','rect'];
+let E={bytes:null,pdf:null,n:1,sc:1.3,A:[],hist:[],fut:[],mode:'select',active:null,drag:null,bg:null};
+const ec=$('#ec'),ex=ec.getContext('2d'),rgbOf=h=>PDFLib.rgb(parseInt(h.slice(1,3),16)/255,parseInt(h.slice(3,5),16)/255,parseInt(h.slice(5,7),16)/255);
+$('#ef').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{E.bytes=new Uint8Array(await f.arrayBuffer());E.pdf=await pdfjsLib.getDocument({data:E.bytes.slice()}).promise;E.n=1;E.A=[];E.hist=[];E.fut=[];E.active=null;E.mode='select';document.querySelectorAll('.emode').forEach(b=>b.classList.toggle('on',b.dataset.m=='select'));ec.style.touchAction='none';hidePanel();$('#ew').hidden=false;await page()}catch(x){st('Cannot open this PDF ('+x.message+'). Password-protected files are not supported yet.')}};
+async function loadTextItems(n){try{const pg=await E.pdf.getPage(n),tc=await pg.getTextContent(),vp=pg.getViewport({scale:1});
+return tc.items.filter(it=>it.str&&it.str.trim()).map(it=>{const tx=it.transform,p0=vp.convertToViewportPoint(tx[4],tx[5]),fs=Math.max(4,Math.abs(tx[3])||Math.abs(tx[0])||10),w=Math.max(4,Math.abs(it.width||fs*it.str.length*.5)),h=fs*1.15;
+return{x:p0[0],y:p0[1]-fs*.83,w,h,fs,str:it.str}})}catch(e){return[]}}
+function hexAt(x,y){try{const s=E.sc,px=Math.max(0,Math.min(E.bg.width-1,Math.round(x*s))),py=Math.max(0,Math.min(E.bg.height-1,Math.round(y*s))),d=E.bg.getContext('2d').getImageData(px,py,1,1).data;return'#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('')}catch(e){return null}}
+function lum(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return(.299*r+.587*g+.114*b)/255}
+async function page(){E.bg=await rend(E.pdf,E.n,E.sc);ec.width=E.bg.width;ec.height=E.bg.height;$('#pg').textContent=E.n+' / '+E.pdf.numPages;E.active=null;hidePanel();E.curItems=await loadTextItems(E.n);paint()}
+function defaultsFor(m){if(m=='redact')return{c:'#000000',op:1};if(m=='white')return{c:'#ffffff',op:1};if(m=='mask')return{c:'#ffe600',op:.85};if(m=='hl')return{c:'#ffe600',op:.4};if(m=='rect')return{c:'#000000',op:1};return{c:'#000000',op:1,fs:14,ff:'Helvetica',b:false,i:false,u:false,al:'left',ls:1.2,tx:'',cover:false,bgc:'#ffffff'}}
+function corners(a){const s=E.sc;return[[a.x*s,a.y*s],[(a.x+a.w)*s,a.y*s],[(a.x+a.w)*s,(a.y+a.h)*s],[a.x*s,(a.y+a.h)*s]]}
+function drawObj(x,a){const s=E.sc;if(a.t=='redact'||a.t=='white'||a.t=='mask'||a.t=='hl'){x.globalAlpha=a.op;x.fillStyle=a.c;x.fillRect(a.x*s,a.y*s,a.w*s,a.h*s);x.globalAlpha=1}
+else if(a.t=='rect'){x.globalAlpha=a.op;x.strokeStyle=a.c;x.lineWidth=2;x.strokeRect(a.x*s,a.y*s,a.w*s,a.h*s);x.globalAlpha=1}
+else if(a.t=='text'){if(a.cover){x.globalAlpha=1;x.fillStyle=a.bgc||'#ffffff';x.fillRect(a.x*s,a.y*s,a.w*s,a.h*s)}x.globalAlpha=1;x.fillStyle=a.c;const wt=a.b?'bold ':'',it=a.i?'italic ':'';x.font=wt+it+(a.fs*s)+'px '+(a.ff=='TimesRoman'?'Times New Roman,serif':a.ff=='Courier'?'Courier New,monospace':'Helvetica,Arial,sans-serif');x.textBaseline='top';
+ const lines=(a.tx||'').split('\n'),lh=a.fs*a.ls*s;lines.forEach((ln,i)=>{let tx0=a.x*s;const tw=x.measureText(ln).width;if(a.al=='center')tx0=a.x*s+(a.w*s-tw)/2;else if(a.al=='right')tx0=a.x*s+a.w*s-tw;x.fillText(ln,tx0,a.y*s+i*lh);if(a.u)x.fillRect(tx0,a.y*s+i*lh+a.fs*s*.9,tw,Math.max(1,a.fs*s*.06))})}
+else if(a.t=='pen'){x.strokeStyle=a.c;x.lineWidth=2;x.beginPath();a.pts.forEach((q,i)=>x[i?'lineTo':'moveTo'](q[0]*s,q[1]*s));x.stroke()}}
+function paint(){ex.drawImage(E.bg,0,0);E.A.filter(a=>a.p==E.n).forEach(a=>drawObj(ex,a));
+if(E.active&&E.active.p==E.n&&E.active.t!='pen'){const s=E.sc,a=E.active;ex.strokeStyle='#2563eb';ex.setLineDash([5,4]);ex.lineWidth=1.5;ex.strokeRect(a.x*s,a.y*s,a.w*s,a.h*s);ex.setLineDash([]);ex.fillStyle='#2563eb';corners(a).forEach(c=>{ex.beginPath();ex.arc(c[0],c[1],6,0,7);ex.fill()})}}
+const pos=e=>{const r=ec.getBoundingClientRect(),f=ec.width/r.width;return[(e.clientX-r.left)*f/E.sc,(e.clientY-r.top)*f/E.sc]};
+function snap(){return JSON.parse(JSON.stringify(E.A))}
+function pushHist(){E.hist.push(snap());if(E.hist.length>60)E.hist.shift();E.fut=[]}
+function handleHit(a,px,py){const s=E.sc,tol=14/s,cs=[[a.x,a.y],[a.x+a.w,a.y],[a.x+a.w,a.y+a.h],[a.x,a.y+a.h]];for(let i=0;i<4;i++)if(Math.hypot(cs[i][0]-px,cs[i][1]-py)<tol)return i;return -1}
+function showPanel(a){$('#panel').hidden=false;$('#px').value=Math.round(a.x);$('#py').value=Math.round(a.y);$('#pw').value=Math.round(a.w);$('#ph').value=Math.round(a.h);$('#pc').value=a.c;$('#po').value=a.op;
+const isText=a.t=='text';$('#textRow').hidden=!isText;$('#textArea2').hidden=!isText;
+if(isText){$('#pff').value=a.ff;$('#pfs').value=a.fs;$('#pb').checked=a.b;$('#pi').checked=a.i;$('#pu').checked=a.u;$('#pal').value=a.al;$('#pls').value=a.ls;$('#ptx').value=a.tx;$('#pcov').checked=!!a.cover;$('#pbgc').value=a.bgc||'#ffffff'}
+$('#pocrres').textContent=''}
+function hidePanel(){$('#panel').hidden=true}
+function syncPanel(a){if($('#panel').hidden)return;$('#px').value=Math.round(a.x);$('#py').value=Math.round(a.y);$('#pw').value=Math.round(a.w);$('#ph').value=Math.round(a.h)}
+$('#etool').onclick=e=>{const m=e.target.dataset.m;if(!m)return;E.mode=m;E.active=null;hidePanel();document.querySelectorAll('.emode').forEach(b=>b.classList.toggle('on',b.dataset.m==m));ec.style.touchAction=m=='hand'?'pan-x pan-y':'none';paint()};
+ec.onpointerdown=e=>{if(!E.bg)return;const[x,y]=pos(e);ec.setPointerCapture(e.pointerId);
+if(E.mode=='select'){if(E.active&&E.active.p==E.n){const h=handleHit(E.active,x,y);if(h>=0){pushHist();const a=E.active,f0=h==0?[a.x+a.w,a.y+a.h]:h==1?[a.x,a.y+a.h]:h==2?[a.x,a.y]:[a.x+a.w,a.y];E.drag={k:'rs',a,f0};return}}
+for(let i=E.A.length-1;i>=0;i--){const a=E.A[i];if(a.p!=E.n||a.t=='pen')continue;if(x>=a.x&&x<=a.x+a.w&&y>=a.y&&y<=a.y+a.h){pushHist();E.active=a;showPanel(a);E.drag={k:'mv',a,off:[x-a.x,y-a.y]};paint();return}}
+E.active=null;hidePanel();paint();return}
+if(E.mode=='hand')return;
+if(E.mode=='edit'){const items=E.curItems||[];for(let i=items.length-1;i>=0;i--){const it=items[i];if(x>=it.x&&x<=it.x+it.w&&y>=it.y&&y<=it.y+it.h){pushHist();const bgc=hexAt(it.x+2,it.y-3)||'#ffffff';let tc=hexAt(it.x+Math.min(3,it.w*.3),it.y+it.h*.6)||'#000000';if(lum(tc)>.55)tc='#000000';
+const o={t:'text',p:E.n,x:it.x,y:it.y,w:it.w,h:it.h,fs:Math.round(it.fs),ff:'Helvetica',b:false,i:false,u:false,al:'left',ls:1.15,c:tc,tx:it.str,cover:true,bgc,op:1};
+E.A.push(o);E.active=o;showPanel(o);paint();return}}
+st(items.length?'No text found right there — try tapping closer to a word.':'No digital text detected on this page. "Edit text" only works on computer-generated PDFs, not scanned images — use Blackout/Whiteout/Text instead.');return}
+if(E.mode=='pen'){pushHist();const o={t:'pen',p:E.n,c:$('#pc').value||'#000000',pts:[[x,y]]};E.A.push(o);E.drag={k:'pen',o};return}
+if(DRAWM.includes(E.mode)){pushHist();const o={t:E.mode,p:E.n,x,y,w:0,h:0,...defaultsFor(E.mode)};E.A.push(o);E.drag={k:'draw',start:[x,y],o}}};
+ec.onpointermove=e=>{if(!E.drag)return;const[x,y]=pos(e);
+if(E.drag.k=='mv'){const a=E.drag.a;a.x=x-E.drag.off[0];a.y=y-E.drag.off[1];paint();syncPanel(a);return}
+if(E.drag.k=='rs'){const a=E.drag.a,f0=E.drag.f0;a.x=Math.min(x,f0[0]);a.y=Math.min(y,f0[1]);a.w=Math.max(5,Math.abs(x-f0[0]));a.h=Math.max(5,Math.abs(y-f0[1]));paint();syncPanel(a);return}
+if(E.drag.k=='draw'){const o=E.drag.o,s0=E.drag.start;o.x=Math.min(x,s0[0]);o.y=Math.min(y,s0[1]);o.w=Math.abs(x-s0[0]);o.h=Math.abs(y-s0[1]);paint();return}
+if(E.drag.k=='pen'){E.drag.o.pts.push([x,y]);paint()}};
+ec.onpointerup=()=>{if(E.drag&&E.drag.k=='draw'){const o=E.drag.o;if(o.w<4||o.h<4){E.A.pop();E.active=null}else{E.active=o;showPanel(o)}paint()}E.drag=null};
+['px','py','pw','ph'].forEach(id=>$('#'+id).oninput=()=>{if(!E.active)return;E.active.x=+$('#px').value;E.active.y=+$('#py').value;E.active.w=Math.max(5,+$('#pw').value);E.active.h=Math.max(5,+$('#ph').value);paint()});
+$('#pc').oninput=()=>{if(E.active){E.active.c=$('#pc').value;paint()}};
+$('#po').oninput=()=>{if(E.active){E.active.op=+$('#po').value;paint()}};
+$('#pff').onchange=()=>{if(E.active){E.active.ff=$('#pff').value;paint()}};
+$('#pfs').oninput=()=>{if(E.active){E.active.fs=+$('#pfs').value;paint()}};
+$('#pb').onchange=()=>{if(E.active){E.active.b=$('#pb').checked;paint()}};
+$('#pi').onchange=()=>{if(E.active){E.active.i=$('#pi').checked;paint()}};
+$('#pu').onchange=()=>{if(E.active){E.active.u=$('#pu').checked;paint()}};
+$('#pal').onchange=()=>{if(E.active){E.active.al=$('#pal').value;paint()}};
+$('#pls').oninput=()=>{if(E.active){E.active.ls=+$('#pls').value;paint()}};
+$('#pcov').onchange=()=>{if(E.active){E.active.cover=$('#pcov').checked;paint()}};
+$('#pbgc').oninput=()=>{if(E.active){E.active.bgc=$('#pbgc').value;paint()}};
+$('#ptx').oninput=()=>{if(!E.active)return;if(/[^\x00-\xFF]/.test($('#ptx').value))return st('Bengali/Hindi text is not supported in this version. Use Latin letters.');E.active.tx=$('#ptx').value;paint()};
+$('#papply').onclick=()=>{E.active=null;hidePanel();paint()};
+$('#pdel').onclick=()=>{if(!E.active)return;const i=E.A.indexOf(E.active);if(i>=0)E.A.splice(i,1);E.active=null;hidePanel();paint()};
+$('#pocr').onclick=async()=>{if(!E.active)return;const a=E.active,s=E.sc,c=document.createElement('canvas');c.width=Math.max(1,Math.round(a.w*s));c.height=Math.max(1,Math.round(a.h*s));c.getContext('2d').drawImage(E.bg,a.x*s,a.y*s,a.w*s,a.h*s,0,0,c.width,c.height);
+$('#pocrres').textContent='Reading…';try{const r=await Tesseract.recognize(c,'eng+ben+hin');$('#pocrres').textContent='Detected ('+Math.round(r.data.confidence)+'% confidence): '+(r.data.text.trim()||'(no text found)')+' — this is OCR guidance only, not an exact font match.';
+if(a.t=='text'&&!a.tx){const approx=Math.max(6,Math.round(a.h*.7));$('#pfs').value=approx;a.fs=approx;paint()}}catch(e2){$('#pocrres').textContent='OCR failed: '+e2.message}};
+const ot=$('#origtog');['pointerdown'].forEach(ev=>ot.addEventListener(ev,()=>ex.drawImage(E.bg,0,0)));['pointerup','pointerleave'].forEach(ev=>ot.addEventListener(ev,()=>paint()));
+$('#pv').onclick=()=>{if(E.n>1){E.n--;page()}};$('#nx').onclick=()=>{if(E.n<E.pdf.numPages){E.n++;page()}};
+$('#zi').onclick=()=>{E.sc=Math.min(3,E.sc+.3);page()};$('#zo').onclick=()=>{E.sc=Math.max(.5,E.sc-.3);page()};
+$('#un').onclick=()=>{if(!E.hist.length)return;E.fut.push(snap());E.A=E.hist.pop();E.active=null;hidePanel();paint()};
+$('#rd').onclick=()=>{if(!E.fut.length)return;E.hist.push(snap());E.A=E.fut.pop();E.active=null;hidePanel();paint()};
+function stdFont(ff,b,i){if(ff=='TimesRoman')return b&&i?'TimesRomanBoldItalic':b?'TimesRomanBold':i?'TimesRomanItalic':'TimesRoman';if(ff=='Courier')return b&&i?'CourierBoldOblique':b?'CourierBold':i?'CourierOblique':'Courier';return b&&i?'HelveticaBoldOblique':b?'HelveticaBold':i?'HelveticaOblique':'Helvetica'}
+$('#sv').onclick=async()=>{try{st('Saving…');const d=await PDFLib.PDFDocument.load(E.bytes),ps=d.getPages(),wm=$('#wm').value,wmf=await d.embedFont(PDFLib.StandardFonts.Helvetica),fontCache={};
+if(/[^\x00-\xFF]/.test(wm))return st('Watermark must use Latin letters.');
+async function getFont(key){if(!fontCache[key])fontCache[key]=await d.embedFont(PDFLib.StandardFonts[key]);return fontCache[key]}
+for(let i=0;i<ps.length;i++){const p=ps[i],H=p.getHeight(),W=p.getWidth();
+for(const a of E.A.filter(a=>a.p==i+1)){
+if(a.t=='redact'||a.t=='white'||a.t=='mask'||a.t=='hl')p.drawRectangle({x:a.x,y:H-a.y-a.h,width:a.w,height:a.h,color:rgbOf(a.c),opacity:a.op});
+else if(a.t=='rect')p.drawRectangle({x:a.x,y:H-a.y-a.h,width:a.w,height:a.h,borderColor:rgbOf(a.c),borderWidth:2,opacity:0,borderOpacity:a.op});
+else if(a.t=='text'){if(a.cover)p.drawRectangle({x:a.x,y:H-a.y-a.h,width:a.w,height:a.h,color:rgbOf(a.bgc||'#ffffff')});const fo=await getFont(stdFont(a.ff,a.b,a.i)),lines=(a.tx||'').split('\n'),lh=a.fs*a.ls;
+lines.forEach((ln,li)=>{const tw=fo.widthOfTextAtSize(ln,a.fs);let tx0=a.x;if(a.al=='center')tx0=a.x+(a.w-tw)/2;else if(a.al=='right')tx0=a.x+a.w-tw;const ty=H-a.y-a.fs*.85-li*lh;p.drawText(ln,{x:tx0,y:ty,size:a.fs,font:fo,color:rgbOf(a.c)});if(a.u)p.drawLine({start:{x:tx0,y:ty-a.fs*.08},end:{x:tx0+tw,y:ty-a.fs*.08},thickness:Math.max(1,a.fs*.06),color:rgbOf(a.c)})})}
+else if(a.t=='pen')for(let j=1;j<a.pts.length;j++)p.drawLine({start:{x:a.pts[j-1][0],y:H-a.pts[j-1][1]},end:{x:a.pts[j][0],y:H-a.pts[j][1]},thickness:1.5,color:rgbOf(a.c)})}
+if(wm)p.drawText(wm,{x:W*.2,y:H*.3,size:W/9,font:wmf,color:PDFLib.rgb(.5,.5,.5),opacity:.2,rotate:PDFLib.degrees(45)});
+if($('#pnum').checked){const t=String(i+1);p.drawText(t,{x:W/2-wmf.widthOfTextAtSize(t,10)/2,y:20,size:10,font:wmf})}}
+dl(new Blob([await d.save()],{type:'application/pdf'}),'edited.pdf');st('Saved. Your original file is unchanged.')}catch(x){st('Could not save: '+x.message)}};
+
+/* ---------- OTHER TOOLS ---------- */
+const PDFA='application/pdf';
+function range(s,n){const r=[];s.split(',').forEach(t=>{const m=t.trim().match(/^(\d+)(?:-(\d+))?$/);if(!m)return;for(let i=+m[1];i<=Math.min(+(m[2]||m[1]),n);i++)if(i>0)r.push(i-1)});return r}
+const TL={
+i2p:{a:'image/*',m:1,b:'Create PDF',o:'',r:async fs=>{const cs=[];for(const f of fs)cs.push(await loadC(f));dl(await toPdf(cs,.92),'images.pdf')}},
+p2i:{a:PDFA,b:'Convert to PNG',o:'',r:async(fs,out)=>{const p=await pdfOf(fs[0]);out.innerHTML='';for(let i=1;i<=p.numPages;i++){st('Page '+i+' of '+p.numPages);const c=await rend(p,i,2.5),b=await new Promise(r=>c.toBlob(r,'image/png')),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='page-'+i+'.png';a.textContent='Download page '+i+' (PNG)';out.append(a,document.createElement('br'))}}},
+merge:{a:PDFA,m:1,b:'Merge PDFs',o:'',r:async fs=>{const d=await PDFLib.PDFDocument.create();for(const f of fs){const s=await PDFLib.PDFDocument.load(await f.arrayBuffer());(await d.copyPages(s,s.getPageIndices())).forEach(p=>d.addPage(p))}dl(new Blob([await d.save()],{type:PDFA}),'merged.pdf')}},
+split:{a:PDFA,b:'Extract pages',o:'<input id="rg" placeholder="Pages, e.g. 1-3,5">',r:async fs=>{const s=await PDFLib.PDFDocument.load(await fs[0].arrayBuffer()),ix=range($('#rg').value,s.getPageCount());if(!ix.length)return st('Enter pages like 1-3,5');const d=await PDFLib.PDFDocument.create();(await d.copyPages(s,ix)).forEach(p=>d.addPage(p));dl(new Blob([await d.save()],{type:PDFA}),'extracted.pdf')}},
+comp:{a:PDFA,b:'Compress',o:'<select id="cq"><option value=".6">Balanced</option><option value=".4">Smaller</option><option value=".8">Better quality</option></select>',r:async fs=>{const p=await pdfOf(fs[0]),cs=[];for(let i=1;i<=p.numPages;i++){st('Page '+i+' of '+p.numPages);cs.push(await rend(p,i,1.5))}const b=await toPdf(cs,+$('#cq').value);dl(b,'compressed.pdf');st('Done: '+Math.round(fs[0].size/1024)+' KB → '+Math.round(b.size/1024)+' KB. Pages become images, so text is no longer selectable.')}},
+ocr:{a:'image/*,'+PDFA,b:'Extract text',o:'<select id="ol"><option value="eng">English</option><option value="ben">Bengali</option><option value="hin">Hindi</option><option value="eng+ben+hin">All three</option></select>',r:async(fs,out)=>{const f=fs[0],L=$('#ol').value,cs=[];if(f.type==PDFA){const p=await pdfOf(f);for(let i=1;i<=Math.min(p.numPages,20);i++)cs.push(await rend(p,i,2.5))}else cs.push(await loadC(f));
+let txt='',cf=0;for(let i=0;i<cs.length;i++){const r=await Tesseract.recognize(cs[i],L,{logger:m=>m.progress!=null&&st('Page '+(i+1)+': '+m.status+' '+Math.round(m.progress*100)+'%')});txt+=(cs.length>1?'--- Page '+(i+1)+' ---\n':'')+r.data.text+'\n';cf+=r.data.confidence}
+out.innerHTML='<p class="hint">Average confidence: '+Math.round(cf/cs.length)+'%. OCR can make mistakes; check important numbers against the original.</p><textarea id="ot"></textarea><div class="row"><button id="cp">Copy text</button></div>';$('#ot').value=txt;$('#cp').onclick=()=>navigator.clipboard.writeText($('#ot').value).then(()=>st('Copied'))}}};
+Object.keys(TL).forEach(k=>{const t=TL[k],s=document.createElement('section');s.id='t-'+k;s.className='pn tp';s.hidden=true;
+s.innerHTML=`<label class="btn" id="dz-${k}">Choose file${t.m?'s':''}<input type="file" accept="${t.a}" ${t.m?'multiple':''} hidden></label> <span class="hint" id="fn-${k}">or drop here</span><div class="row">${t.o}<button class="pri" id="go-${k}">${t.b}</button></div><div id="out-${k}"></div>`;
+$('#tools').append(s);let files=[];const inp=s.querySelector('input'),nm=s.querySelector('#fn-'+k);
+const set=l=>{files=[...l];nm.textContent=files.map(f=>f.name).join(', ')||'or drop here'};
+inp.onchange=()=>set(inp.files);s.ondragover=e=>e.preventDefault();s.ondrop=e=>{e.preventDefault();set(e.dataTransfer.files)};
+s.querySelector('#go-'+k).onclick=async()=>{if(!files.length)return st('Choose a file first.');try{st('Working…');await t.r(files,s.querySelector('#out-'+k));if(!$('#st').textContent.startsWith('Done'))st('Finished.')}catch(e){st('Something went wrong: '+e.message)}}});
+nav();show();
+</script></body></html>
