@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Document Tools Portal</title>
+<style>
+:root{--bg:#eef2f6;--card:#fff;--ink:#14202b;--mut:#5b6b7a;--ac:#4f46e5;--acx:#fff;--ln:#d5dde5;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1419;--card:#18212a;--ink:#e6edf3;--mut:#93a3b3;--ac:#8b7cf6;--acx:#0e1419;--ln:#2a3641;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0e1419;--card:#18212a;--ink:#e6edf3;--mut:#93a3b3;--ac:#8b7cf6;--acx:#0e1419;--ln:#2a3641;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,sans-serif;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);min-height:100%}
+html,body{height:100%}
+header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--ln);background:var(--card)}
+header h1{font-size:1.1rem;margin:0;flex:1}
+button,.card{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--ln);border-radius:12px;cursor:pointer}
+button{padding:8px 12px}
+#home{max-width:720px;margin:24px auto;padding:0 16px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{padding:22px;text-align:left;display:flex;flex-direction:column;gap:8px}
+.card:hover{border-color:var(--ac)}
+.card b{font-size:1.1rem}
+.card span{color:var(--mut);font-size:.9rem}
+#frame-wrap{position:fixed;inset:0;top:57px;display:none}
+#frame-wrap.on{display:block}
+iframe{width:100%;height:100%;border:0;background:#fff}
+#back{display:none}
+#back.on{display:inline-block}
+[hidden]{display:none!important}
+</style></head><body>
+<header><button id="back">← Tools</button><h1 id="ttl">Document Tools</h1><button id="th">Dark/Light</button></header>
+<div id="home">
+ <button class="card" data-src="passport-photo.html" data-t="Passport Photo Maker">
+  <b>🪪 Passport Photo Maker</b><span>Remove background, crop to passport/ID size, print a sheet of copies.</span>
+ </button>
+ <button class="card" data-src="smartdoc-studio.html" data-t="SmartDoc Studio">
+  <b>📄 SmartDoc Studio</b><span>Scan &amp; auto-crop documents, edit and merge/split/compress PDFs, OCR.</span>
+ </button>
+</div>
+<div id="frame-wrap"><iframe id="fr" title="tool"></iframe></div>
+<script>
+const $=s=>document.querySelector(s);
+$('#th').onclick=()=>{const r=document.documentElement,d=r.dataset.theme?r.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=d?'light':'dark'};
+function open(src,title){$('#fr').src=src;$('#ttl').textContent=title;$('#home').hidden=true;$('#frame-wrap').classList.add('on');$('#back').classList.add('on')}
+function home(){$('#frame-wrap').classList.remove('on');$('#back').classList.remove('on');$('#home').hidden=false;$('#ttl').textContent='Document Tools';$('#fr').src='about:blank'}
+document.querySelectorAll('.card').forEach(c=>c.onclick=()=>open(c.dataset.src,c.dataset.t));
+$('#back').onclick=home;
+</script>
+</body></html>
